@@ -44,9 +44,9 @@ namespace System.Drawing.PSD
 			/// <summary>
 			/// The rectangle enclosing the mask.
 			/// </summary>
-			public Rectangle Rect { get; set; }
+			public Rectangle Rect { get; private set; }
 
-			public byte DefaultColor { get; set; }
+			public byte DefaultColor { get; private set; }
 
 
 			private static readonly int PositionIsRelativeBit = BitVector32.CreateMask();
@@ -65,7 +65,7 @@ namespace System.Drawing.PSD
 				{
 					return _flags[PositionIsRelativeBit];
 				}
-				set
+				private set
 				{
 					_flags[PositionIsRelativeBit] = value;
 				}
@@ -74,7 +74,7 @@ namespace System.Drawing.PSD
 			public bool Disabled
 			{
 				get { return _flags[DisabledBit]; }
-				set { _flags[DisabledBit] = value; }
+				private set { _flags[DisabledBit] = value; }
 			}
 
 			/// <summary>
@@ -83,7 +83,7 @@ namespace System.Drawing.PSD
 			public bool InvertOnBlendBit
 			{
 				get { return _flags[_invertOnBlendBit]; }
-				set { _flags[_invertOnBlendBit] = value; }
+				private set { _flags[_invertOnBlendBit] = value; }
 			}
 
 			internal Mask(Layer layer)

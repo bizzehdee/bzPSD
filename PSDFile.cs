@@ -65,7 +65,7 @@ namespace System.Drawing.PSD
 		public Int16 Channels
 		{
 			get { return _channels; }
-			set
+            private set
 			{
 				if (value < 1 || value > 24) throw new ArgumentException("Supported range is 1 to 24");
 				_channels = value;
@@ -80,7 +80,7 @@ namespace System.Drawing.PSD
 		public Int32 Rows
 		{
 			get { return _rows; }
-			set
+            private set
 			{
 				if (value < 0 || value > 30000) throw new ArgumentException("Supported range is 1 to 30000.");
 				_rows = value;
@@ -95,7 +95,7 @@ namespace System.Drawing.PSD
 		public Int32 Columns
 		{
 			get { return _columns; }
-			set
+            private set
 			{
 				if (value < 0 || value > 30000)
 					throw new ArgumentException("Supported range is 1 to 30000.");
@@ -111,7 +111,7 @@ namespace System.Drawing.PSD
 		public Int32 Depth
 		{
 			get { return _depth; }
-			set
+            private set
 			{
 				if (value == 1 || value == 8 || value == 16)
 				{
@@ -127,39 +127,43 @@ namespace System.Drawing.PSD
 		/// <summary>
 		/// The color mode of the file.
 		/// </summary>
-		public ColorModes ColorMode { get; set; }
-		public List<Layer> Layers { get; private set; }
-		public Boolean AbsoluteAlpha { get; set; }
-		public Byte[][] ImageData { get; set; }
-		public ImageCompression ImageCompression { get; set; }
+		public ColorModes ColorMode { get; private set; }
+
+        private List<Layer> _layers;
+		public IEnumerable<Layer> Layers { get { return _layers; } }
+		public Boolean AbsoluteAlpha { get; private set; }
+        public Byte[][] ImageData { get; private set; }
+        public ImageCompression ImageCompression { get; private set; }
+
+        private List<ImageResource> _imageResources;
 		/// <summary>
 		/// The Image resource blocks for the file
 		/// </summary>
 		/// 
-		public List<ImageResource> ImageResources { get; private set; }
+        public IEnumerable<ImageResource> ImageResources { get { return _imageResources; } }
 
 		public ResolutionInfo Resolution
 		{
 			get
 			{
-				return (ResolutionInfo)ImageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
+                return (ResolutionInfo)_imageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
 			}
 
-			set
+            private set
 			{
-				ImageResource oldValue = ImageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
-				if (oldValue != null) ImageResources.Remove(oldValue);
+                ImageResource oldValue = _imageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
+                if (oldValue != null) _imageResources.Remove(oldValue);
 
-				ImageResources.Add(value);
+                _imageResources.Add(value);
 			}
 		}
 		#endregion //End Properties
 
 		public PsdFile()
 		{
-			Layers = new List<Layer>();
+            _layers = new List<Layer>();
 			Version = 1;
-			ImageResources = new List<ImageResource>();
+            _imageResources = new List<ImageResource>();
 		}
 
         public PsdFile Load(String filename)
@@ -211,7 +215,7 @@ namespace System.Drawing.PSD
 
 				Debug.WriteLine("LoadingImageResources started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-				ImageResources.Clear();
+                _imageResources.Clear();
 
 				UInt32 imgResLength = reader.ReadUInt32();
 				if (imgResLength <= 0) return null;
@@ -237,7 +241,7 @@ namespace System.Drawing.PSD
 							break;
 					}
 
-					ImageResources.Add(imgRes);
+                    _imageResources.Add(imgRes);
 
 				}
 				// make sure we are not on a wrong offset, so set the stream position 
@@ -361,13 +365,13 @@ namespace System.Drawing.PSD
 				numberOfLayers = Math.Abs(numberOfLayers);
 			}
 
-			Layers.Clear();
+            _layers.Clear();
 
 			if (numberOfLayers == 0) return;
 
 			for (Int32 i = 0; i < numberOfLayers; i++)
 			{
-				Layers.Add(new Layer(reader, this));
+                _layers.Add(new Layer(reader, this));
 			}
 
 			foreach (Layer layer in Layers)

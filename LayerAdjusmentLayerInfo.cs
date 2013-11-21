@@ -39,9 +39,9 @@ namespace System.Drawing.PSD
 			/// <summary>
 			/// The layer to which this info belongs
 			/// </summary>
-			private Layer Layer { get; set; }
-			public String Key { get; set; }
-			public Byte[] Data { get; set; }
+            private Layer Layer { get; set; }
+            public String Key { get; private set; }
+            public Byte[] Data { get; private set; }
 
 			public AdjusmentLayerInfo(String key, Layer layer)
 			{

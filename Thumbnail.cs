@@ -35,7 +35,7 @@ namespace System.Drawing.PSD
 	/// </summary>
 	public class Thumbnail : ImageResource
 	{
-		public Bitmap Image { get; set; }
+		public Bitmap Image { get; private set; }
 
 		public Thumbnail(ImageResource imageResource)
 			: base(imageResource)

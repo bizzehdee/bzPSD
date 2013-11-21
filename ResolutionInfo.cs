@@ -40,7 +40,7 @@ namespace System.Drawing.PSD
 		/// </summary>
 		public Int16 HRes
 		{
-			get; set;
+			get; private set;
 		}
 
 		/// <summary>
@@ -48,7 +48,7 @@ namespace System.Drawing.PSD
 		/// </summary>
 		public Int16 VRes
 		{
-			get; set;
+			get; private set;
 		}
 
 		/// <summary>
@@ -62,12 +62,12 @@ namespace System.Drawing.PSD
 
 		public ResUnit HResUnit
 		{
-			get; set;
+			get; private set;
 		}
 
 		public ResUnit VResUnit
 		{
-			get; set;
+			get; private set;
 		}
 
 		/// <summary>
@@ -84,12 +84,12 @@ namespace System.Drawing.PSD
 
 		public Unit WidthUnit
 		{
-			get; set;
+			get; private set;
 		}
 
 		public Unit HeightUnit
 		{
-			get; set;
+			get; private set;
 		}
 
 		public ResolutionInfo()

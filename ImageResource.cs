@@ -101,9 +101,9 @@ namespace System.Drawing.PSD
 	public class ImageResource
 	{
 		public Int16 ID { get; set; }
-		public String Name { get; set; }
-		public Byte[] Data { get; set; }
-		public String OSType { get; set; }
+        public String Name { get; private set; }
+        public Byte[] Data { get; set; }
+        public String OSType { get; private set; }
 
 		public ImageResource()
 		{

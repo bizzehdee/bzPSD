@@ -47,19 +47,19 @@ namespace System.Drawing.PSD
 			/// 1 = transparency mask
 			/// 2 = user supplied layer mask
 			/// </summary>
-			public Int16 ID { get; set; }
+            public Int16 ID { get; private set; }
 
 			/// <summary>
 			/// The length of the compressed channel data.
 			/// </summary>
-			public Int32 Length;
+            public Int32 Length { get; private set; }
 
 			/// <summary>
 			/// The compressed raw channel data
 			/// </summary>
 			public Byte[] Data { get; set; }
 			public Byte[] ImageData { get; set; }
-			public ImageCompression ImageCompression { get; set; }
+            public ImageCompression ImageCompression { get; set; }
 
 			internal Channel(Int16 id, Layer layer)
 			{

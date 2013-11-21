@@ -41,7 +41,7 @@ namespace System.Drawing.PSD
 		/// <summary>
 		/// The rectangle containing the contents of the layer.
 		/// </summary>
-		public Rectangle Rect { get; set; }
+        public Rectangle Rect { get; private set; }
 		public List<Channel> Channels { get; private set; }
 		public SortedList<Int16, Channel> SortedChannels { get; private set; }
 		/// <summary>
@@ -72,7 +72,7 @@ namespace System.Drawing.PSD
 		public string BlendModeKey
 		{
 			get { return _blendModeKeyStr; }
-			set
+			private set
 			{
 				if (value.Length != 4) throw new ArgumentException("Key length must be 4");
 				_blendModeKeyStr = value;
@@ -82,12 +82,12 @@ namespace System.Drawing.PSD
 		/// <summary>
 		/// 0 = transparent ... 255 = opaque
 		/// </summary>
-		public byte Opacity { get; set; }
+		public byte Opacity { get; private set; }
 
 		/// <summary>
 		/// false = base, true = nonbase
 		/// </summary>
-		public bool Clipping { get; set; }
+        public bool Clipping { get; private set; }
 
 		private static readonly int ProtectTransBit = BitVector32.CreateMask();
 		private static readonly int VisibleBit = BitVector32.CreateMask(ProtectTransBit);
@@ -100,7 +100,7 @@ namespace System.Drawing.PSD
 		public bool Visible
 		{
 			get { return !_flags[VisibleBit]; }
-			set { _flags[VisibleBit] = !value; }
+			private set { _flags[VisibleBit] = !value; }
 		}
 
 		/// <summary>
@@ -109,17 +109,17 @@ namespace System.Drawing.PSD
 		public bool ProtectTrans
 		{
 			get { return _flags[ProtectTransBit]; }
-			set { _flags[ProtectTransBit] = value; }
+			private set { _flags[ProtectTransBit] = value; }
 		}
 
 		/// <summary>
 		/// The descriptive layer name
 		/// </summary>
-		public string Name { get; set; }
+		public string Name { get; private set; }
 
 		public BlendingRanges BlendingRangesData { get; set; }
-		public Mask MaskData { get; set; }
-		public List<AdjusmentLayerInfo> AdjustmentInfo { get; set; }
+        public Mask MaskData { get; private set; }
+        public List<AdjusmentLayerInfo> AdjustmentInfo { get; private set; }
 
 		public Layer(PsdFile psdFile)
 		{
@@ -128,7 +128,6 @@ namespace System.Drawing.PSD
 			Channels = new List<Channel>();
 			Rect = Rectangle.Empty;
 			PsdFile = psdFile;
-			PsdFile.Layers.Add(this);
 		}
 
 		public Layer(BinaryReverseReader reverseReader, PsdFile psdFile)

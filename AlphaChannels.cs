@@ -33,18 +33,19 @@ namespace System.Drawing.PSD
 {
 	public class AlphaChannels : ImageResource
 	{
-		public List<String> ChannelNames { get; set; }
+        private List<String> _channelNames;
+        public IEnumerable<String> ChannelNames { get { return _channelNames;  } }
 
 		public AlphaChannels()
 			: base((Int16)ResourceIDs.AlphaChannelNames)
 		{
-			ChannelNames = new List<String>();
+            _channelNames = new List<String>();
 		}
 
 		public AlphaChannels(ImageResource imageResource)
 			: base(imageResource)
 		{
-			ChannelNames = new List<String>();
+            _channelNames = new List<String>();
 			BinaryReverseReader reverseReader = imageResource.DataReader;
 			// the names are pascal strings without padding!!!
 			while ((reverseReader.BaseStream.Length - reverseReader.BaseStream.Position) > 0)
@@ -52,7 +53,7 @@ namespace System.Drawing.PSD
 				Byte stringLength = reverseReader.ReadByte();
 				String s = new String(reverseReader.ReadChars(stringLength));
 
-				if (s.Length > 0) ChannelNames.Add(s);
+                if (s.Length > 0) _channelNames.Add(s);
 			}
 			reverseReader.Close();
 		}

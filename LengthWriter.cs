@@ -30,9 +30,9 @@ namespace System.Drawing.PSD
 {
 	class LengthWriter : IDisposable
 	{
-		long _lengthPosition = long.MinValue;
-		readonly long _startPosition;
-		readonly BinaryReverseWriter _reverseWriter;
+        private long _lengthPosition = long.MinValue;
+		private readonly long _startPosition;
+		private readonly BinaryReverseWriter _reverseWriter;
 
 		public LengthWriter(BinaryReverseWriter writer)
 		{
