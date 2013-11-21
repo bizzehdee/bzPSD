@@ -162,7 +162,7 @@ namespace System.Drawing.PSD
 			ImageResources = new List<ImageResource>();
 		}
 
-		public void Load(String filename)
+        public PsdFile Load(String filename)
 		{
 			using (FileStream stream = new FileStream(filename, FileMode.Open))
 			{
@@ -214,7 +214,7 @@ namespace System.Drawing.PSD
 				ImageResources.Clear();
 
 				UInt32 imgResLength = reader.ReadUInt32();
-				if (imgResLength <= 0) return;
+				if (imgResLength <= 0) return null;
 
 				Int64 startPosition = reader.BaseStream.Position;
 
@@ -252,7 +252,7 @@ namespace System.Drawing.PSD
 				Debug.WriteLine("LoadLayerAndMaskInfo - Part1 started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 				UInt32 layersAndMaskLength = reader.ReadUInt32();
 
-				if (layersAndMaskLength <= 0) return;
+				if (layersAndMaskLength <= 0) return null;
 
 				//new start position
 				startPosition = reader.BaseStream.Position;
@@ -332,6 +332,8 @@ namespace System.Drawing.PSD
 
 				#endregion //End LoadingFinalImage
 			}
+
+            return this;
 		} //end Load()
 
 		/// <summary>

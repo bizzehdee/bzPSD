@@ -253,5 +253,10 @@ namespace System.Drawing.PSD
 			}
 		}
 
+        public override string ToString()
+        {
+            return String.Format("{0} {1} {2}", Name, Visible ? "Visible" : "Hidden", BlendModeKey);
+        }
+
 	}
 }

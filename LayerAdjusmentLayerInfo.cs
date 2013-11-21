@@ -39,7 +39,7 @@ namespace System.Drawing.PSD
 			/// <summary>
 			/// The layer to which this info belongs
 			/// </summary>
-			internal Layer Layer { get; private set; }
+			private Layer Layer { get; set; }
 			public String Key { get; set; }
 			public Byte[] Data { get; set; }
 

@@ -132,5 +132,9 @@ namespace System.Drawing.PSD
 			Data = memoryStream.ToArray();
 		}
 
+        public override string ToString()
+        {
+            return String.Format("{0}{2}x{1}{3}", HRes, VRes, Enum.GetName(typeof(Unit), WidthUnit), Enum.GetName(typeof(Unit), HeightUnit));
+        }
 	}
 }
