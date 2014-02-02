@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>System.Drawing.PSD</id>
+    <version>0.1.0</version>
+    <title>System.Drawing.PSD</title>
+    <authors>Darren Horrocks</authors>
+    <owners>Darren Horrocks</owners>
+    <projectUrl>https://github.com/bizzehdee/System.Drawing.PSD</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>PSD loader for .NET written entirely in managed C#</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>psd images photoshop</tags>
+  </metadata>
+</package>
