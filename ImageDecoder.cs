@@ -124,29 +124,37 @@ namespace System.Drawing.PSD
 		{
 			Color c = Color.White;
 
+			byte red = psdFile.ImageData[0][pos];
+			byte green = psdFile.ImageData[1][pos];
+			byte blue = psdFile.ImageData[2][pos];
+
+			byte alpha = 255;
+			if(psdFile.ImageData.Length > 3)
+			{ 
+				alpha = psdFile.ImageData[3][pos];
+			}
+
 			switch (psdFile.ColorMode)
 			{
 				case PsdFile.ColorModes.RGB:
-					c = Color.FromArgb(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+					c = Color.FromArgb(alpha, red, green, blue);
 					break;
 				case PsdFile.ColorModes.CMYK:
-					c = CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], psdFile.ImageData[3][pos]);
+					c = CMYKToRGB(red, green, blue, alpha);
 					break;
 				case PsdFile.ColorModes.Multichannel:
-					c = CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], 0);
+					c = CMYKToRGB(red, green, blue, 0);
 					break;
 				case PsdFile.ColorModes.Grayscale:
 				case PsdFile.ColorModes.Duotone:
-					c = Color.FromArgb(psdFile.ImageData[0][pos], psdFile.ImageData[0][pos], psdFile.ImageData[0][pos]);
+					c = Color.FromArgb(red, red, red);
 					break;
-				case PsdFile.ColorModes.Indexed:
-					{
-						Int32 index = psdFile.ImageData[0][pos];
-						c = Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
-					}
+				case PsdFile.ColorModes.Indexed:		
+					Int32 index = red;
+					c = Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
 					break;
 				case PsdFile.ColorModes.Lab:
-						c = LabToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+						c = LabToRGB(red, green, blue);
 					break;
 			}
 
