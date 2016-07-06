@@ -166,176 +166,188 @@ namespace System.Drawing.PSD
             _imageResources = new List<ImageResource>();
 		}
 
-        public PsdFile Load(String filename)
+		public PsdFile Load(string filename)
 		{
 			using (FileStream stream = new FileStream(filename, FileMode.Open))
 			{
-				//binary reverse reader reads data types in big-endian format.
-				BinaryReverseReader reader = new BinaryReverseReader(stream);
-
-				#region "Headers"
-				//The headers area is used to check for a valid PSD file
-				Debug.WriteLine("LoadHeader started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-				String signature = new String(reader.ReadChars(4));
-				if (signature != "8BPS") throw new IOException("Bad or invalid file stream supplied");
-
-				//get the version number, should be 1 always
-				if ((Version = reader.ReadInt16()) != 1) throw new IOException("Invalid version number supplied");
-
-				//get rid of the 6 bytes reserverd in PSD format
-				reader.BaseStream.Position += 6;
-
-				//get the rest of the information from the PSD file.
-				//Everytime ReadInt16() is called, it reads 2 bytes.
-				//Everytime ReadInt32() is called, it reads 4 bytes.
-				_channels = reader.ReadInt16();
-				_rows = reader.ReadInt32();
-				_columns = reader.ReadInt32();
-				_depth = reader.ReadInt16();
-				ColorMode = (ColorModes)reader.ReadInt16();
-
-				//by end of headers, the reader has read 26 bytes into the file.
-				#endregion //End Headers
-
-				#region "ColorModeData"
-				Debug.WriteLine("LoadColorModeData started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-				UInt32 paletteLength = reader.ReadUInt32(); //readUint32() advances the reader 4 bytes.
-				if (paletteLength > 0)
-				{
-					ColorModeData = reader.ReadBytes((Int32)paletteLength);
-				}
-				#endregion //End ColorModeData
-
-
-				#region "Loading Image Resources"
-				//This part takes extensive use of classes that I didn't write therefore
-				//I can't document much on what they do.
-
-				Debug.WriteLine("LoadingImageResources started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-                _imageResources.Clear();
-
-				UInt32 imgResLength = reader.ReadUInt32();
-				if (imgResLength <= 0) return null;
-
-				Int64 startPosition = reader.BaseStream.Position;
-
-				while ((reader.BaseStream.Position - startPosition) < imgResLength)
-				{
-					ImageResource imgRes = new ImageResource(reader);
-
-					ResourceIDs resID = (ResourceIDs)imgRes.ID;
-					switch (resID)
-					{
-						case ResourceIDs.ResolutionInfo:
-							imgRes = new ResolutionInfo(imgRes);
-							break;
-						case ResourceIDs.Thumbnail1:
-						case ResourceIDs.Thumbnail2:
-							imgRes = new Thumbnail(imgRes);
-							break;
-						case ResourceIDs.AlphaChannelNames:
-							imgRes = new AlphaChannels(imgRes);
-							break;
-					}
-
-                    _imageResources.Add(imgRes);
-
-				}
-				// make sure we are not on a wrong offset, so set the stream position 
-				// manually
-				reader.BaseStream.Position = startPosition + imgResLength;
-
-				#endregion //End LoadingImageResources
-
-
-				#region "Layer and Mask Info"
-				//We are gonna load up all the layers and masking of the PSD now.
-				Debug.WriteLine("LoadLayerAndMaskInfo - Part1 started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-				UInt32 layersAndMaskLength = reader.ReadUInt32();
-
-				if (layersAndMaskLength <= 0) return null;
-
-				//new start position
-				startPosition = reader.BaseStream.Position;
-
-				//Lets start by loading up all the layers
-				LoadLayers(reader);
-				//we are done the layers, load up the masks
-				LoadGlobalLayerMask(reader);
-
-				// make sure we are not on a wrong offset, so set the stream position 
-				// manually
-				reader.BaseStream.Position = startPosition + layersAndMaskLength;
-				#endregion //End Layer and Mask info
-
-				#region "Loading Final Image"
-
-				//we have loaded up all the information from the PSD file
-				//into variables we can use later on.
-
-				//lets finish loading the raw data that defines the image 
-				//in the picture.
-
-				Debug.WriteLine("LoadImage started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-				ImageCompression = (ImageCompression)reader.ReadInt16();
-
-				ImageData = new Byte[_channels][];
-
-				//---------------------------------------------------------------
-
-				if (ImageCompression == ImageCompression.Rle)
-				{
-					// The RLE-compressed data is proceeded by a 2-byte data count for each row in the data,
-					// which we're going to just skip.
-					reader.BaseStream.Position += _rows * _channels * 2;
-				}
-
-				//---------------------------------------------------------------
-
-				Int32 bytesPerRow = 0;
-
-				switch (_depth)
-				{
-					case 1:
-						bytesPerRow = _columns;//NOT Shure
-						break;
-					case 8:
-						bytesPerRow = _columns;
-						break;
-					case 16:
-						bytesPerRow = _columns * 2;
-						break;
-				}
-
-				//---------------------------------------------------------------
-
-				for (Int32 ch = 0; ch < _channels; ch++)
-				{
-					ImageData[ch] = new Byte[_rows * bytesPerRow];
-
-					switch (ImageCompression)
-					{
-						case ImageCompression.Raw:
-							reader.Read(ImageData[ch], 0, ImageData[ch].Length);
-							break;
-						case ImageCompression.Rle:
-							{
-								for (Int32 i = 0; i < _rows; i++)
-								{
-									Int32 rowIndex = i * _columns;
-									RleHelper.DecodedRow(reader.BaseStream, ImageData[ch], rowIndex, bytesPerRow);
-								}
-							}
-							break;
-					}
-				}
-
-				#endregion //End LoadingFinalImage
+				return Load(stream);
 			}
+		}
+
+		public PsdFile Load(byte[] data)
+		{
+			var stream = new MemoryStream(data);
+
+			return Load(stream);
+		}
+
+		public PsdFile Load(Stream stream)
+		{
+			//binary reverse reader reads data types in big-endian format.
+			BinaryReverseReader reader = new BinaryReverseReader(stream);
+
+			#region "Headers"
+			//The headers area is used to check for a valid PSD file
+			Debug.WriteLine("LoadHeader started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+			String signature = new String(reader.ReadChars(4));
+			if (signature != "8BPS") throw new IOException("Bad or invalid file stream supplied");
+
+			//get the version number, should be 1 always
+			if ((Version = reader.ReadInt16()) != 1) throw new IOException("Invalid version number supplied");
+
+			//get rid of the 6 bytes reserverd in PSD format
+			reader.BaseStream.Position += 6;
+
+			//get the rest of the information from the PSD file.
+			//Everytime ReadInt16() is called, it reads 2 bytes.
+			//Everytime ReadInt32() is called, it reads 4 bytes.
+			_channels = reader.ReadInt16();
+			_rows = reader.ReadInt32();
+			_columns = reader.ReadInt32();
+			_depth = reader.ReadInt16();
+			ColorMode = (ColorModes)reader.ReadInt16();
+
+			//by end of headers, the reader has read 26 bytes into the file.
+			#endregion //End Headers
+
+			#region "ColorModeData"
+			Debug.WriteLine("LoadColorModeData started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+			UInt32 paletteLength = reader.ReadUInt32(); //readUint32() advances the reader 4 bytes.
+			if (paletteLength > 0)
+			{
+				ColorModeData = reader.ReadBytes((Int32)paletteLength);
+			}
+			#endregion //End ColorModeData
+
+
+			#region "Loading Image Resources"
+			//This part takes extensive use of classes that I didn't write therefore
+			//I can't document much on what they do.
+
+			Debug.WriteLine("LoadingImageResources started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+			_imageResources.Clear();
+
+			UInt32 imgResLength = reader.ReadUInt32();
+			if (imgResLength <= 0) return null;
+
+			Int64 startPosition = reader.BaseStream.Position;
+
+			while ((reader.BaseStream.Position - startPosition) < imgResLength)
+			{
+				ImageResource imgRes = new ImageResource(reader);
+
+				ResourceIDs resID = (ResourceIDs)imgRes.ID;
+				switch (resID)
+				{
+					case ResourceIDs.ResolutionInfo:
+						imgRes = new ResolutionInfo(imgRes);
+						break;
+					case ResourceIDs.Thumbnail1:
+					case ResourceIDs.Thumbnail2:
+						imgRes = new Thumbnail(imgRes);
+						break;
+					case ResourceIDs.AlphaChannelNames:
+						imgRes = new AlphaChannels(imgRes);
+						break;
+				}
+
+				_imageResources.Add(imgRes);
+
+			}
+			// make sure we are not on a wrong offset, so set the stream position 
+			// manually
+			reader.BaseStream.Position = startPosition + imgResLength;
+
+			#endregion //End LoadingImageResources
+
+
+			#region "Layer and Mask Info"
+			//We are gonna load up all the layers and masking of the PSD now.
+			Debug.WriteLine("LoadLayerAndMaskInfo - Part1 started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+			UInt32 layersAndMaskLength = reader.ReadUInt32();
+
+			if (layersAndMaskLength <= 0) return null;
+
+			//new start position
+			startPosition = reader.BaseStream.Position;
+
+			//Lets start by loading up all the layers
+			LoadLayers(reader);
+			//we are done the layers, load up the masks
+			LoadGlobalLayerMask(reader);
+
+			// make sure we are not on a wrong offset, so set the stream position 
+			// manually
+			reader.BaseStream.Position = startPosition + layersAndMaskLength;
+			#endregion //End Layer and Mask info
+
+			#region "Loading Final Image"
+
+			//we have loaded up all the information from the PSD file
+			//into variables we can use later on.
+
+			//lets finish loading the raw data that defines the image 
+			//in the picture.
+
+			Debug.WriteLine("LoadImage started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+			ImageCompression = (ImageCompression)reader.ReadInt16();
+
+			ImageData = new Byte[_channels][];
+
+			//---------------------------------------------------------------
+
+			if (ImageCompression == ImageCompression.Rle)
+			{
+				// The RLE-compressed data is proceeded by a 2-byte data count for each row in the data,
+				// which we're going to just skip.
+				reader.BaseStream.Position += _rows * _channels * 2;
+			}
+
+			//---------------------------------------------------------------
+
+			Int32 bytesPerRow = 0;
+
+			switch (_depth)
+			{
+				case 1:
+					bytesPerRow = _columns;//NOT Shure
+					break;
+				case 8:
+					bytesPerRow = _columns;
+					break;
+				case 16:
+					bytesPerRow = _columns * 2;
+					break;
+			}
+
+			//---------------------------------------------------------------
+
+			for (Int32 ch = 0; ch < _channels; ch++)
+			{
+				ImageData[ch] = new Byte[_rows * bytesPerRow];
+
+				switch (ImageCompression)
+				{
+					case ImageCompression.Raw:
+						reader.Read(ImageData[ch], 0, ImageData[ch].Length);
+						break;
+					case ImageCompression.Rle:
+						{
+							for (Int32 i = 0; i < _rows; i++)
+							{
+								Int32 rowIndex = i * _columns;
+								RleHelper.DecodedRow(reader.BaseStream, ImageData[ch], rowIndex, bytesPerRow);
+							}
+						}
+						break;
+				}
+			}
+
+			#endregion //End LoadingFinalImage
 
             return this;
 		} //end Load()
