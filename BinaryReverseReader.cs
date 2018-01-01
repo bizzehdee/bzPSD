@@ -69,16 +69,18 @@ namespace System.Drawing.PSD
 		{
 			return Utilities.SwapBytes(base.ReadUInt64());
 		}
-
+		
 		public String ReadPascalString()
 		{
 			Byte stringLength = base.ReadByte();
-
-			Char[] c = base.ReadChars(stringLength);
+			/*Char[] c = base.ReadChars(stringLength);
 
 			if ((stringLength % 2) == 0) base.ReadByte();
 
-			return new String(c);
+			return new String(c);*/
+		    	byte[] buf=base.ReadBytes(stringLength);
+		    	if ((stringLength % 2) == 0) base.ReadByte();
+		    	return Encoding.Default.GetString(buf);
 		}
 	}
 }
