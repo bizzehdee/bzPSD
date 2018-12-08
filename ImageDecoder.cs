@@ -35,7 +35,7 @@ namespace System.Drawing.PSD
     {
         public static Bitmap DecodeImage(PsdFile psdFile)
         {
-            Bitmap bitmap = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
+            var bitmap = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
 
             //Parallel load each row
             Parallel.For(0, psdFile.Rows, y =>
@@ -62,7 +62,7 @@ namespace System.Drawing.PSD
         {
             if (layer.Rect.Width == 0 || layer.Rect.Height == 0) return null;
 
-            Bitmap bitmap = new Bitmap(layer.Rect.Width, layer.Rect.Height, PixelFormat.Format32bppArgb);
+            var bitmap = new Bitmap(layer.Rect.Width, layer.Rect.Height, PixelFormat.Format32bppArgb);
 
             Parallel.For(0, layer.Rect.Height, y =>
             {
@@ -264,13 +264,13 @@ namespace System.Drawing.PSD
         {
             // Standards used Observer = 2, Illuminant = D65
             // ref_X = 95.047, ref_Y = 100.000, ref_Z = 108.883
-            Double varX = x / 100.0;
-            Double varY = y / 100.0;
-            Double varZ = z / 100.0;
+            double varX = x / 100.0;
+            double varY = y / 100.0;
+            double varZ = z / 100.0;
 
-            Double varR = varX * 3.2406 + varY * (-1.5372) + varZ * (-0.4986);
-            Double varG = varX * (-0.9689) + varY * 1.8758 + varZ * 0.0415;
-            Double varB = varX * 0.0557 + varY * (-0.2040) + varZ * 1.0570;
+            double varR = varX * 3.2406 + varY * (-1.5372) + varZ * (-0.4986);
+            double varG = varX * (-0.9689) + varY * 1.8758 + varZ * 0.0415;
+            double varB = varX * 0.0557 + varY * (-0.2040) + varZ * 1.0570;
 
             varR = varR > 0.0031308 ? 1.055 * (Math.Pow(varR, 1 / 2.4)) - 0.055 : 12.92 * varR;
             varG = varG > 0.0031308 ? 1.055 * (Math.Pow(varG, 1 / 2.4)) - 0.055 : 12.92 * varG;
@@ -305,7 +305,7 @@ namespace System.Drawing.PSD
         // Yellow  = (1-Blue-Black)/(1-Black)
         //
 
-        private static Color CMYKToRGB(Byte c, Byte m, Byte y, Byte k)
+        private static Color CMYKToRGB(byte c, byte m, byte y, byte k)
         {
             double dMaxColours = Math.Pow(2, 8);
 
