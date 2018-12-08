@@ -82,36 +82,34 @@ namespace System.Drawing.PSD
         public ResolutionInfo(ImageResource imgRes)
             : base(imgRes)
         {
-            BinaryReverseReader reverseReader = imgRes.DataReader;
+            using (BinaryReverseReader reverseReader = imgRes.DataReader)
+            {
+                HRes = reverseReader.ReadInt16();
+                HResUnit = (ResUnit)reverseReader.ReadInt32();
+                WidthUnit = (Unit)reverseReader.ReadInt16();
 
-            HRes = reverseReader.ReadInt16();
-            HResUnit = (ResUnit)reverseReader.ReadInt32();
-            WidthUnit = (Unit)reverseReader.ReadInt16();
+                VRes = reverseReader.ReadInt16();
+                VResUnit = (ResUnit)reverseReader.ReadInt32();
+                HeightUnit = (Unit)reverseReader.ReadInt16();
 
-            VRes = reverseReader.ReadInt16();
-            VResUnit = (ResUnit)reverseReader.ReadInt32();
-            HeightUnit = (Unit)reverseReader.ReadInt16();
-
-            reverseReader.Close();
+            }
         }
 
         protected override void StoreData()
         {
-            MemoryStream memoryStream = new MemoryStream();
-            BinaryReverseWriter reverseWriter = new BinaryReverseWriter(memoryStream);
+            using (var memoryStream = new MemoryStream())
+            using (var reverseWriter = new BinaryReverseWriter(memoryStream))
+            {
+                reverseWriter.Write(HRes);
+                reverseWriter.Write((Int32)HResUnit);
+                reverseWriter.Write((Int16)WidthUnit);
 
-            reverseWriter.Write(HRes);
-            reverseWriter.Write((Int32)HResUnit);
-            reverseWriter.Write((Int16)WidthUnit);
+                reverseWriter.Write(VRes);
+                reverseWriter.Write((Int32)VResUnit);
+                reverseWriter.Write((Int16)HeightUnit);
 
-            reverseWriter.Write(VRes);
-            reverseWriter.Write((Int32)VResUnit);
-            reverseWriter.Write((Int16)HeightUnit);
-
-            reverseWriter.Close();
-            memoryStream.Close();
-
-            Data = memoryStream.ToArray();
+                Data = memoryStream.ToArray();
+            }
         }
 
         public override string ToString()
