@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.IO;
 
 namespace System.Drawing.PSD
@@ -42,19 +43,15 @@ namespace System.Drawing.PSD
         {
             using (BinaryReverseReader reverseReader = DataReader)
             {
-                Int32 format = reverseReader.ReadInt32();
-                Int32 width = reverseReader.ReadInt32();
-                Int32 height = reverseReader.ReadInt32();
-                /*Int32 widthBytes = */
-                reverseReader.ReadInt32();
-                /*Int32 size = */
-                reverseReader.ReadInt32();
-                /*Int32 compressedSize = */
-                reverseReader.ReadInt32();
-                /*Int16 bitPerPixel = */
-                reverseReader.ReadInt16();
-                /*Int16 planes = */
-                reverseReader.ReadInt16();
+                int format = reverseReader.ReadInt32();
+                int width = reverseReader.ReadInt32();
+                int height = reverseReader.ReadInt32();
+
+                reverseReader.ReadInt32(); // read widthBytes
+                reverseReader.ReadInt32(); // read size
+                reverseReader.ReadInt32(); // read compressedSize
+                reverseReader.ReadInt16(); // read bitPerPixel
+                reverseReader.ReadInt16(); // read planes
 
                 if (format == 1)
                 {
