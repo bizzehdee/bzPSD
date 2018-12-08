@@ -33,9 +33,9 @@ namespace System.Drawing.PSD
     /// <summary>
     /// Writes primitive data types as binary values in in big-endian format
     /// </summary>
-    public class BinaryReverseWriter : BinaryWriter
+    public sealed class BinaryReverseWriter : BinaryWriter
     {
-        public Boolean AutoFlush { get; set; }
+        public bool AutoFlush { get; set; }
 
         public BinaryReverseWriter(Stream stream)
             : base(stream)

@@ -33,7 +33,7 @@ namespace System.Drawing.PSD
     /// <summary>
     /// Summary description for Thumbnail.
     /// </summary>
-    public class Thumbnail : ImageResource
+    public sealed class Thumbnail : ImageResource
     {
         public Bitmap Image { get; private set; }
 
@@ -58,8 +58,7 @@ namespace System.Drawing.PSD
 
                 if (format == 1)
                 {
-
-                    Byte[] imgData = reverseReader.ReadBytes((Int32)(reverseReader.BaseStream.Length - reverseReader.BaseStream.Position));
+                    byte[] imgData = reverseReader.ReadBytes((Int32)(reverseReader.BaseStream.Length - reverseReader.BaseStream.Position));
 
                     using (MemoryStream strm = new MemoryStream(imgData))
                     {
