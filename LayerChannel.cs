@@ -51,13 +51,15 @@ namespace System.Drawing.PSD
             /// <summary>
             /// The length of the compressed channel data.
             /// </summary>
-            public Int32 Length { get; private set; }
+            public int Length { get; private set; }
 
             /// <summary>
             /// The compressed raw channel data
             /// </summary>
-            public Byte[] Data { get; set; }
-            public Byte[] ImageData { get; set; }
+            public byte[] Data { get; set; }
+
+            public byte[] ImageData { get; set; }
+
             public ImageCompression ImageCompression { get; set; }
 
             internal Channel(Int16 id, Layer layer)
@@ -99,7 +101,7 @@ namespace System.Drawing.PSD
                 {
                     ImageCompression = (ImageCompression)imageReader.ReadInt16();
 
-                    Int32 bytesPerRow = 0;
+                    int bytesPerRow = 0;
 
                     switch (Layer.PsdFile.Depth)
                     {
@@ -114,7 +116,7 @@ namespace System.Drawing.PSD
                             break;
                     }
 
-                    ImageData = new Byte[Layer.Rect.Height * bytesPerRow];
+                    ImageData = new byte[Layer.Rect.Height * bytesPerRow];
 
                     switch (ImageCompression)
                     {
@@ -123,13 +125,17 @@ namespace System.Drawing.PSD
                             break;
                         case ImageCompression.Rle:
                             {
-                                Int32[] rowLengthList = new Int32[Layer.Rect.Height];
+                                var rowLengthList = new int[Layer.Rect.Height];
 
-                                for (Int32 i = 0; i < rowLengthList.Length; i++) rowLengthList[i] = imageReader.ReadInt16();
-
-                                for (Int32 i = 0; i < Layer.Rect.Height; i++)
+                                for (int i = 0; i < rowLengthList.Length; i++)
                                 {
-                                    Int32 rowIndex = i * Layer.Rect.Width;
+                                    rowLengthList[i] = imageReader.ReadInt16();
+                                }
+
+                                for (int i = 0; i < Layer.Rect.Height; i++)
+                                {
+                                    int rowIndex = i * Layer.Rect.Width;
+
                                     RleHelper.DecodedRow(imageReader.BaseStream, ImageData, rowIndex, bytesPerRow);
 
                                     //if (rowLenghtList[i] % 2 == 1)
@@ -145,14 +151,14 @@ namespace System.Drawing.PSD
             {
                 if (ImageCompression == ImageCompression.Rle)
                 {
-                    MemoryStream memoryStream = new MemoryStream();
-                    BinaryReverseWriter reverseWriter = new BinaryReverseWriter(memoryStream);
+                    var memoryStream = new MemoryStream();
+                    var reverseWriter = new BinaryReverseWriter(memoryStream);
 
                     // we will write the correct lengths later, so remember 
                     // the position
-                    Int64 lengthPosition = reverseWriter.BaseStream.Position;
+                    long lengthPosition = reverseWriter.BaseStream.Position;
 
-                    Int32[] rleRowLenghs = new Int32[Layer.Rect.Height];
+                    var rleRowLenghs = new int[Layer.Rect.Height];
 
                     if (ImageCompression == ImageCompression.Rle)
                     {
@@ -162,7 +168,7 @@ namespace System.Drawing.PSD
                         }
                     }
 
-                    Int32 bytesPerRow = 0;
+                    int bytesPerRow = 0;
 
                     switch (Layer.PsdFile.Depth)
                     {
@@ -177,17 +183,17 @@ namespace System.Drawing.PSD
                             break;
                     }
 
-                    for (Int32 row = 0; row < Layer.Rect.Height; row++)
+                    for (int row = 0; row < Layer.Rect.Height; row++)
                     {
-                        Int32 rowIndex = row * Layer.Rect.Width;
+                        int rowIndex = row * Layer.Rect.Width;
                         rleRowLenghs[row] = RleHelper.EncodedRow(reverseWriter.BaseStream, ImageData, rowIndex, bytesPerRow);
                     }
 
-                    Int64 endPosition = reverseWriter.BaseStream.Position;
+                    long endPosition = reverseWriter.BaseStream.Position;
 
                     reverseWriter.BaseStream.Position = lengthPosition;
 
-                    foreach (Int32 length in rleRowLenghs)
+                    foreach (int length in rleRowLenghs)
                     {
                         reverseWriter.Write((Int16)length);
                     }
