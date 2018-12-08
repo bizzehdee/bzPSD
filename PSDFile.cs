@@ -50,19 +50,20 @@ namespace System.Drawing.PSD
         /// Unfortunately, it is intentionally not documented by Adobe, and non-Photoshop 
         /// readers are advised to treat duotone images as gray-scale images.
         /// </summary>
-        public Byte[] ColorModeData = new Byte[0];
+        public byte[] ColorModeData = Array.Empty<byte>();
 
         //Masking data for the PSD
-        private Byte[] _globalLayerMaskData = new Byte[0];
+        private byte[] _globalLayerMaskData = Array.Empty<byte>();
 
-        public Int16 Version { get; private set; }
+        public short Version { get; private set; }
 
-        private Int16 _channels;
+        private short _channels;
+
         /// <summary>
         /// The number of channels in the image, including any alpha channels.
         /// Supported range is 1 to 24.
         /// </summary>
-        public Int16 Channels
+        public short Channels
         {
             get { return _channels; }
             private set
@@ -73,11 +74,11 @@ namespace System.Drawing.PSD
         }
 
 
-        private Int32 _rows;
+        private int _rows;
         /// <summary>
         /// The height of the image in pixels.
         /// </summary>
-        public Int32 Rows
+        public int Rows
         {
             get { return _rows; }
             private set
@@ -88,11 +89,11 @@ namespace System.Drawing.PSD
         }
 
 
-        private Int32 _columns;
+        private int _columns;
         /// <summary>
         /// The width of the image in pixels. 
         /// </summary>
-        public Int32 Columns
+        public int Columns
         {
             get { return _columns; }
             private set
@@ -130,29 +131,33 @@ namespace System.Drawing.PSD
         public ColorModes ColorMode { get; private set; }
 
         private List<Layer> _layers;
-        public IEnumerable<Layer> Layers { get { return _layers; } }
+
+        public IEnumerable<Layer> Layers => _layers;
+
         public Boolean AbsoluteAlpha { get; private set; }
+
         public Byte[][] ImageData { get; private set; }
+
         public ImageCompression ImageCompression { get; private set; }
 
         private List<ImageResource> _imageResources;
+
         /// <summary>
         /// The Image resource blocks for the file
         /// </summary>
-        /// 
         public IEnumerable<ImageResource> ImageResources { get { return _imageResources; } }
 
         public ResolutionInfo Resolution
         {
-            get
-            {
-                return (ResolutionInfo)_imageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
-            }
-
+            get => (ResolutionInfo)_imageResources.Find(x => x.ID == (int)ResourceIDs.ResolutionInfo);
+            
             private set
             {
-                ImageResource oldValue = _imageResources.Find(x => x.ID == (Int32)ResourceIDs.ResolutionInfo);
-                if (oldValue != null) _imageResources.Remove(oldValue);
+                ImageResource oldValue = _imageResources.Find(x => x.ID == (int)ResourceIDs.ResolutionInfo);
+                if (oldValue != null)
+                {
+                    _imageResources.Remove(oldValue);
+                }
 
                 _imageResources.Add(value);
             }
@@ -190,7 +195,8 @@ namespace System.Drawing.PSD
             //The headers area is used to check for a valid PSD file
             Debug.WriteLine("LoadHeader started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-            String signature = new String(reader.ReadChars(4));
+            string signature = new string(reader.ReadChars(4));
+
             if (signature != "8BPS") throw new IOException("Bad or invalid file stream supplied");
 
             //get the version number, should be 1 always
@@ -294,7 +300,7 @@ namespace System.Drawing.PSD
 
             ImageCompression = (ImageCompression)reader.ReadInt16();
 
-            ImageData = new Byte[_channels][];
+            ImageData = new byte[_channels][];
 
             //---------------------------------------------------------------
 
@@ -307,7 +313,7 @@ namespace System.Drawing.PSD
 
             //---------------------------------------------------------------
 
-            Int32 bytesPerRow = 0;
+            int bytesPerRow = 0;
 
             switch (_depth)
             {
@@ -324,9 +330,9 @@ namespace System.Drawing.PSD
 
             //---------------------------------------------------------------
 
-            for (Int32 ch = 0; ch < _channels; ch++)
+            for (int ch = 0; ch < _channels; ch++)
             {
-                ImageData[ch] = new Byte[_rows * bytesPerRow];
+                ImageData[ch] = new byte[_rows * bytesPerRow];
 
                 switch (ImageCompression)
                 {
@@ -335,9 +341,9 @@ namespace System.Drawing.PSD
                         break;
                     case ImageCompression.Rle:
                         {
-                            for (Int32 i = 0; i < _rows; i++)
+                            for (int i = 0; i < _rows; i++)
                             {
-                                Int32 rowIndex = i * _columns;
+                                int rowIndex = i * _columns;
                                 RleHelper.DecodedRow(reader.BaseStream, ImageData[ch], rowIndex, bytesPerRow);
                             }
                         }
@@ -362,7 +368,7 @@ namespace System.Drawing.PSD
             if (layersInfoSectionLength <= 0)
                 return;
 
-            Int64 startPosition = reader.BaseStream.Position;
+            long startPosition = reader.BaseStream.Position;
 
             Int16 numberOfLayers = reader.ReadInt16();
 
