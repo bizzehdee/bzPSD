@@ -48,17 +48,20 @@ namespace System.Drawing.PSD
 
             public byte DefaultColor { get; private set; }
 
-
             private static readonly int PositionIsRelativeBit = BitVector32.CreateMask();
+
             private static readonly int DisabledBit = BitVector32.CreateMask(PositionIsRelativeBit);
+
             // ReSharper disable InconsistentNaming
             private static readonly int _invertOnBlendBit = BitVector32.CreateMask(DisabledBit);
+
             // ReSharper restore InconsistentNaming
 
             private BitVector32 _flags;
             /// <summary>
             /// If true, the position of the mask is relative to the layer.
             /// </summary>
+            /// 
             public bool PositionIsRelative
             {
                 get
@@ -181,7 +184,6 @@ namespace System.Drawing.PSD
 
                 maskChannel.Data = reader.ReadBytes(maskChannel.Length);
 
-
                 using (BinaryReverseReader readerImg = maskChannel.DataReader)
                 {
                     maskChannel.ImageCompression = (ImageCompression)readerImg.ReadInt16();
@@ -232,7 +234,6 @@ namespace System.Drawing.PSD
                     }
 
                     ImageData = (byte[])maskChannel.ImageData.Clone();
-
                 }
             }
 

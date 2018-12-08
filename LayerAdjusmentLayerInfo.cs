@@ -40,7 +40,9 @@ namespace System.Drawing.PSD
             /// The layer to which this info belongs
             /// </summary>
             private Layer Layer { get; set; }
+
             public String Key { get; private set; }
+
             public Byte[] Data { get; private set; }
 
             public AdjusmentLayerInfo(String key, Layer layer)
@@ -82,10 +84,7 @@ namespace System.Drawing.PSD
 
             public BinaryReverseReader DataReader
             {
-                get
-                {
-                    return new BinaryReverseReader(new MemoryStream(Data));
-                }
+                get => new BinaryReverseReader(new MemoryStream(Data));
             }
         }
 

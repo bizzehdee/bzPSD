@@ -41,7 +41,6 @@ namespace System.Drawing.PSD
             /// </summary>
             public Layer Layer { get; private set; }
 
-
             /// <summary>
             /// 0 = red, 1 = green, etc.
             /// 1 = transparency mask
@@ -218,12 +217,8 @@ namespace System.Drawing.PSD
 
             public BinaryReverseReader DataReader
             {
-                get
-                {
-                    return Data == null ? null : new BinaryReverseReader(new MemoryStream(Data));
-                }
+                get => Data == null ? null : new BinaryReverseReader(new MemoryStream(Data));
             }
         }
-
     }
 }

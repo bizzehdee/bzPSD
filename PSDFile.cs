@@ -221,7 +221,6 @@ namespace System.Drawing.PSD
             }
             #endregion //End ColorModeData
 
-
             #region "Loading Image Resources"
             //This part takes extensive use of classes that I didn't write therefore
             //I can't document much on what they do.
@@ -262,7 +261,6 @@ namespace System.Drawing.PSD
             reader.BaseStream.Position = startPosition + imgResLength;
 
             #endregion //End LoadingImageResources
-
 
             #region "Layer and Mask Info"
             //We are gonna load up all the layers and masking of the PSD now.

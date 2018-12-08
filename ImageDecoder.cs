@@ -223,8 +223,6 @@ namespace System.Drawing.PSD
             return c;
         }
 
-
-
         private static Color LabToRGB(Byte lb, Byte ab, Byte bb)
         {
             Double exL = lb;

@@ -42,8 +42,11 @@ namespace System.Drawing.PSD
         /// The rectangle containing the contents of the layer.
         /// </summary>
         public Rectangle Rect { get; private set; }
+
         public List<Channel> Channels { get; private set; }
+
         public SortedList<Int16, Channel> SortedChannels { get; private set; }
+
         /// <summary>
         /// The blend mode key for the layer
         /// </summary>
@@ -256,6 +259,5 @@ namespace System.Drawing.PSD
         {
             return String.Format("{0} {1} {2}", Name, Visible ? "Visible" : "Hidden", BlendModeKey);
         }
-
     }
 }

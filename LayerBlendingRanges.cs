@@ -36,6 +36,7 @@ namespace System.Drawing.PSD
         public class BlendingRanges
         {
             public Layer Layer { get; private set; }
+
             public Byte[] Data { get; private set; }
 
             public BlendingRanges(Layer layer)

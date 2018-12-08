@@ -38,18 +38,12 @@ namespace System.Drawing.PSD
         /// <summary>
         /// Fixed-point number: pixels per inch
         /// </summary>
-        public Int16 HRes
-        {
-            get; private set;
-        }
+        public Int16 HRes { get; private set; }
 
         /// <summary>
         /// Fixed-point number: pixels per inch
         /// </summary>
-        public Int16 VRes
-        {
-            get; private set;
-        }
+        public Int16 VRes { get; private set; }
 
         /// <summary>
         /// 1=pixels per inch, 2=pixels per centimeter
@@ -60,15 +54,9 @@ namespace System.Drawing.PSD
             PxPerCent = 2
         }
 
-        public ResUnit HResUnit
-        {
-            get; private set;
-        }
+        public ResUnit HResUnit { get; private set; }
 
-        public ResUnit VResUnit
-        {
-            get; private set;
-        }
+        public ResUnit VResUnit { get; private set; }
 
         /// <summary>
         /// 1=in, 2=cm, 3=pt, 4=picas, 5=columns
@@ -82,15 +70,9 @@ namespace System.Drawing.PSD
             Columns = 5
         }
 
-        public Unit WidthUnit
-        {
-            get; private set;
-        }
+        public Unit WidthUnit { get; private set; }
 
-        public Unit HeightUnit
-        {
-            get; private set;
-        }
+        public Unit HeightUnit { get; private set; }
 
         public ResolutionInfo()
         {
