@@ -43,18 +43,21 @@ namespace System.Drawing.PSD
 
         }
 
-        public void WritePascalString(String s)
+        public void WritePascalString(string s)
         {
-            Char[] c = s.Length > 255 ? s.Substring(0, 255).ToCharArray() : s.ToCharArray();
+            char[] c = s.Length > 255 ? s.Substring(0, 255).ToCharArray() : s.ToCharArray();
 
-            base.Write((Byte)c.Length);
+            base.Write((byte)c.Length);
             base.Write(c);
 
-            Int32 realLength = c.Length + 1;
+            int realLength = c.Length + 1;
 
             if ((realLength % 2) == 0) return;
 
-            for (Int32 i = 0; i < (2 - (realLength % 2)); i++) base.Write((Byte)0);
+            for (int i = 0; i < (2 - (realLength % 2)); i++)
+            {
+                base.Write((Byte)0);
+            }
 
             if (AutoFlush) Flush();
         }

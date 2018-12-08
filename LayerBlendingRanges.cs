@@ -37,22 +37,22 @@ namespace System.Drawing.PSD
         {
             public Layer Layer { get; private set; }
 
-            public Byte[] Data { get; private set; }
+            public byte[] Data { get; private set; }
 
             public BlendingRanges(Layer layer)
             {
-                Data = new Byte[0];
+                Data = new byte[0];
                 Layer = layer;
                 Layer.BlendingRangesData = this;
             }
 
             public BlendingRanges(BinaryReverseReader reader, Layer layer)
             {
-                Data = new Byte[0];
+                Data = new byte[0];
                 Debug.WriteLine("BlendingRanges started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
                 Layer = layer;
-                Int32 dataLength = reader.ReadInt32();
+                int dataLength = reader.ReadInt32();
                 if (dataLength <= 0) return;
 
                 Data = reader.ReadBytes(dataLength);

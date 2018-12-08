@@ -40,11 +40,11 @@ namespace System.Drawing.PSD
             //Parallel load each row
             Parallel.For(0, psdFile.Rows, y =>
                                           {
-                                              Int32 rowIndex = y * psdFile.Columns;
+                                              int rowIndex = y * psdFile.Columns;
 
-                                              for (Int32 x = 0; x < psdFile.Columns; x++)
+                                              for (int x = 0; x < psdFile.Columns; x++)
                                               {
-                                                  Int32 pos = rowIndex + x;
+                                                  int pos = rowIndex + x;
 
                                                   Color pixelColor = GetColor(psdFile, pos);
 
@@ -66,20 +66,20 @@ namespace System.Drawing.PSD
 
             Parallel.For(0, layer.Rect.Height, y =>
             {
-                Int32 rowIndex = y * layer.Rect.Width;
+                int rowIndex = y * layer.Rect.Width;
 
-                for (Int32 x = 0; x < layer.Rect.Width; x++)
+                for (int x = 0; x < layer.Rect.Width; x++)
                 {
-                    Int32 pos = rowIndex + x;
+                    int pos = rowIndex + x;
 
                     Color pixelColor = GetColor(layer, pos);
 
                     if (layer.SortedChannels.ContainsKey(-2))
                     {
-                        Int32 maskAlpha = GetColor(layer.MaskData, x, y);
-                        Int32 oldAlpha = pixelColor.A;
+                        int maskAlpha = GetColor(layer.MaskData, x, y);
+                        int oldAlpha = pixelColor.A;
 
-                        Int32 newAlpha = (oldAlpha * maskAlpha) / 255;
+                        int newAlpha = (oldAlpha * maskAlpha) / 255;
                         pixelColor = Color.FromArgb(newAlpha, pixelColor);
                     }
 
@@ -103,11 +103,11 @@ namespace System.Drawing.PSD
 
             Parallel.For(0, layer.Rect.Height, y =>
             {
-                Int32 rowIndex = y * layer.Rect.Width;
+                int rowIndex = y * layer.Rect.Width;
 
-                for (Int32 x = 0; x < layer.Rect.Width; x++)
+                for (int x = 0; x < layer.Rect.Width; x++)
                 {
-                    Int32 pos = rowIndex + x;
+                    int pos = rowIndex + x;
 
                     Color pixelColor = Color.FromArgb(mask.ImageData[pos], mask.ImageData[pos], mask.ImageData[pos]);
 
@@ -117,12 +117,13 @@ namespace System.Drawing.PSD
                     }
                 }
             });
+
             return bitmap;
         }
 
-        private static Color GetColor(PsdFile psdFile, Int32 pos)
+        private static Color GetColor(PsdFile psdFile, int pos)
         {
-            Color c = Color.White;
+            var c = Color.White;
 
             byte red = psdFile.ImageData[0][pos];
             byte green = psdFile.ImageData[1][pos];
@@ -150,7 +151,7 @@ namespace System.Drawing.PSD
                     c = Color.FromArgb(red, red, red);
                     break;
                 case PsdFile.ColorModes.Indexed:
-                    Int32 index = red;
+                    int index = red;
                     c = Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
                     break;
                 case PsdFile.ColorModes.Lab:
@@ -161,7 +162,7 @@ namespace System.Drawing.PSD
             return c;
         }
 
-        private static Color GetColor(Layer layer, Int32 pos)
+        private static Color GetColor(Layer layer, int pos)
         {
             Color c = Color.White;
 
@@ -182,7 +183,7 @@ namespace System.Drawing.PSD
                     break;
                 case PsdFile.ColorModes.Indexed:
                     {
-                        Int32 index = layer.SortedChannels[0].ImageData[pos];
+                        int index = layer.SortedChannels[0].ImageData[pos];
                         c = Color.FromArgb(layer.PsdFile.ColorModeData[index], layer.PsdFile.ColorModeData[index + 256], layer.PsdFile.ColorModeData[index + 2 * 256]);
                     }
                     break;
@@ -198,9 +199,9 @@ namespace System.Drawing.PSD
             return c;
         }
 
-        private static Int32 GetColor(Layer.Mask mask, Int32 x, Int32 y)
+        private static int GetColor(Layer.Mask mask, int x, int y)
         {
-            Int32 c = 255;
+            int c = 255;
 
             if (mask.PositionIsRelative)
             {
@@ -216,45 +217,45 @@ namespace System.Drawing.PSD
             if (y >= 0 && y < mask.Rect.Height &&
                 x >= 0 && x < mask.Rect.Width)
             {
-                Int32 pos = y * mask.Rect.Width + x;
+                int pos = y * mask.Rect.Width + x;
                 c = pos < mask.ImageData.Length ? mask.ImageData[pos] : 255;
             }
 
             return c;
         }
 
-        private static Color LabToRGB(Byte lb, Byte ab, Byte bb)
+        private static Color LabToRGB(byte lb, byte ab, byte bb)
         {
-            Double exL = lb;
-            Double exA = ab;
-            Double exB = bb;
+            double exL = lb;
+            double exA = ab;
+            double exB = bb;
 
-            const Double lCoef = 256.0 / 100.0;
-            const Double aCoef = 256.0 / 256.0;
-            const Double bCoef = 256.0 / 256.0;
+            const double lCoef = 256.0 / 100.0;
+            const double aCoef = 256.0 / 256.0;
+            const double bCoef = 256.0 / 256.0;
 
-            Int32 l = (Int32)(exL / lCoef);
-            Int32 a = (Int32)(exA / aCoef - 128.0);
-            Int32 b = (Int32)(exB / bCoef - 128.0);
+            int l = (int)(exL / lCoef);
+            int a = (int)(exA / aCoef - 128.0);
+            int b = (int)(exB / bCoef - 128.0);
 
             // For the conversion we first convert values to XYZ and then to RGB
             // Standards used Observer = 2, Illuminant = D65
 
-            const Double refX = 95.047;
-            const Double refY = 100.000;
-            const Double refZ = 108.883;
+            const double refX = 95.047;
+            const double refY = 100.000;
+            const double refZ = 108.883;
 
-            Double varY = (l + 16.0) / 116.0;
-            Double varX = a / 500.0 + varY;
-            Double varZ = varY - b / 200.0;
+            double varY = (l + 16.0) / 116.0;
+            double varX = a / 500.0 + varY;
+            double varZ = varY - b / 200.0;
 
             varY = Math.Pow(varY, 3) > 0.008856 ? Math.Pow(varY, 3) : (varY - 16 / 116) / 7.787;
             varX = Math.Pow(varX, 3) > 0.008856 ? Math.Pow(varX, 3) : (varX - 16 / 116) / 7.787;
             varZ = Math.Pow(varZ, 3) > 0.008856 ? Math.Pow(varZ, 3) : (varZ - 16 / 116) / 7.787;
 
-            Double x = refX * varX;
-            Double y = refY * varY;
-            Double z = refZ * varZ;
+            double x = refX * varX;
+            double y = refY * varY;
+            double z = refZ * varZ;
 
             return XYZToRGB(x, y, z);
         }
@@ -275,9 +276,9 @@ namespace System.Drawing.PSD
             varG = varG > 0.0031308 ? 1.055 * (Math.Pow(varG, 1 / 2.4)) - 0.055 : 12.92 * varG;
             varB = varB > 0.0031308 ? 1.055 * (Math.Pow(varB, 1 / 2.4)) - 0.055 : 12.92 * varB;
 
-            Int32 nRed = (Int32)(varR * 256.0);
-            Int32 nGreen = (Int32)(varG * 256.0);
-            Int32 nBlue = (Int32)(varB * 256.0);
+            int nRed = (int)(varR * 256.0);
+            int nGreen = (int)(varG * 256.0);
+            int nBlue = (int)(varB * 256.0);
 
             nRed = nRed > 0 ? nRed : 0;
             nRed = nRed < 255 ? nRed : 255;
@@ -306,21 +307,21 @@ namespace System.Drawing.PSD
 
         private static Color CMYKToRGB(Byte c, Byte m, Byte y, Byte k)
         {
-            Double dMaxColours = Math.Pow(2, 8);
+            double dMaxColours = Math.Pow(2, 8);
 
-            Double exC = c;
-            Double exM = m;
-            Double exY = y;
-            Double exK = k;
+            double exC = c;
+            double exM = m;
+            double exY = y;
+            double exK = k;
 
-            Double C = (1.0 - exC / dMaxColours);
-            Double M = (1.0 - exM / dMaxColours);
-            Double Y = (1.0 - exY / dMaxColours);
-            Double K = (1.0 - exK / dMaxColours);
+            double C = (1.0 - exC / dMaxColours);
+            double M = (1.0 - exM / dMaxColours);
+            double Y = (1.0 - exY / dMaxColours);
+            double K = (1.0 - exK / dMaxColours);
 
-            Int32 nRed = (Int32)((1.0 - (C * (1 - K) + K)) * 255);
-            Int32 nGreen = (Int32)((1.0 - (M * (1 - K) + K)) * 255);
-            Int32 nBlue = (Int32)((1.0 - (Y * (1 - K) + K)) * 255);
+            int nRed = (int)((1.0 - (C * (1 - K) + K)) * 255);
+            int nGreen = (int)((1.0 - (M * (1 - K) + K)) * 255);
+            int nBlue = (int)((1.0 - (Y * (1 - K) + K)) * 255);
 
             nRed = nRed > 0 ? nRed : 0;
             nRed = nRed < 255 ? nRed : 255;

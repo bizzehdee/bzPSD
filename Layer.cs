@@ -142,26 +142,27 @@ namespace System.Drawing.PSD
 
             PsdFile = psdFile;
 
-            Rectangle localRectangle = new Rectangle
+            var localRectangle = new Rectangle
             {
                 Y = reverseReader.ReadInt32(),
                 X = reverseReader.ReadInt32()
             };
+
             localRectangle.Height = reverseReader.ReadInt32() - localRectangle.Y;
             localRectangle.Width = reverseReader.ReadInt32() - localRectangle.X;
 
             Rect = localRectangle;
 
-            Int32 numberOfChannels = reverseReader.ReadUInt16();
+            int numberOfChannels = reverseReader.ReadUInt16();
             Channels.Clear();
-            for (Int32 channel = 0; channel < numberOfChannels; channel++)
+            for (int channel = 0; channel < numberOfChannels; channel++)
             {
                 Channel ch = new Channel(reverseReader, this);
                 Channels.Add(ch);
                 SortedChannels.Add(ch.ID, ch);
             }
 
-            String signature = new String(reverseReader.ReadChars(4));
+            string signature = new String(reverseReader.ReadChars(4));
 
             if (signature != "8BIM") throw (new IOException("Layer Channelheader error"));
 
@@ -170,7 +171,7 @@ namespace System.Drawing.PSD
 
             Clipping = reverseReader.ReadByte() > 0;
 
-            Byte flags = reverseReader.ReadByte();
+            byte flags = reverseReader.ReadByte();
             _flags = new BitVector32(flags);
 
             reverseReader.ReadByte(); //padding
@@ -183,16 +184,16 @@ namespace System.Drawing.PSD
 
             // remember the start position for calculation of the 
             // AdjustmenLayerInfo size
-            Int64 extraDataStartPosition = reverseReader.BaseStream.Position;
+            long extraDataStartPosition = reverseReader.BaseStream.Position;
 
             MaskData = new Mask(reverseReader, this);
             BlendingRangesData = new BlendingRanges(reverseReader, this);
 
-            Int64 namePosition = reverseReader.BaseStream.Position;
+            long namePosition = reverseReader.BaseStream.Position;
 
             Name = reverseReader.ReadPascalString();
 
-            Int32 paddingBytes = (Int32)((reverseReader.BaseStream.Position - namePosition) % 4);
+            int paddingBytes = (int)((reverseReader.BaseStream.Position - namePosition) % 4);
 
             Debug.Print("Layer {0} padding bytes after name", paddingBytes);
             reverseReader.ReadBytes(paddingBytes);
@@ -229,27 +230,30 @@ namespace System.Drawing.PSD
             reverseWriter.Write((Int16)Channels.Count);
             foreach (Channel ch in Channels) ch.Save(reverseWriter);
 
-            const String signature = "8BIM";
+            const string signature = "8BIM";
             reverseWriter.Write(signature.ToCharArray());
             reverseWriter.Write(_blendModeKeyStr.ToCharArray());
             reverseWriter.Write(Opacity);
-            reverseWriter.Write((Byte)(Clipping ? 1 : 0));
-            reverseWriter.Write((Byte)_flags.Data);
-            reverseWriter.Write((Byte)0);
+            reverseWriter.Write((byte)(Clipping ? 1 : 0));
+            reverseWriter.Write((byte)_flags.Data);
+            reverseWriter.Write((byte)0);
 
             using (new LengthWriter(reverseWriter))
             {
                 MaskData.Save(reverseWriter);
                 BlendingRangesData.Save(reverseWriter);
 
-                Int64 namePosition = reverseWriter.BaseStream.Position;
+                long namePosition = reverseWriter.BaseStream.Position;
 
                 reverseWriter.WritePascalString(Name);
 
-                Int32 paddingBytes = (int)((reverseWriter.BaseStream.Position - namePosition) % 4);
+                int paddingBytes = (int)((reverseWriter.BaseStream.Position - namePosition) % 4);
                 Debug.Print("Layer {0} write padding bytes after name", paddingBytes);
 
-                for (Int32 i = 0; i < paddingBytes; i++) reverseWriter.Write((Byte)0);
+                for (int i = 0; i < paddingBytes; i++)
+                {
+                    reverseWriter.Write((byte)0);
+                }
 
                 foreach (AdjusmentLayerInfo info in AdjustmentInfo) info.Save(reverseWriter);
             }

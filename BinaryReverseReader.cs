@@ -71,9 +71,9 @@ namespace System.Drawing.PSD
             return Utilities.SwapBytes(base.ReadUInt64());
         }
 
-        public String ReadPascalString()
+        public string ReadPascalString()
         {
-            Byte stringLength = base.ReadByte();
+            byte stringLength = base.ReadByte();
             /*Char[] c = base.ReadChars(stringLength);
 
 			if ((stringLength % 2) == 0) base.ReadByte();

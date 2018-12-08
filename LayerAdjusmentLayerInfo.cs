@@ -41,11 +41,11 @@ namespace System.Drawing.PSD
             /// </summary>
             private Layer Layer { get; set; }
 
-            public String Key { get; private set; }
+            public string Key { get; private set; }
 
-            public Byte[] Data { get; private set; }
+            public byte[] Data { get; private set; }
 
-            public AdjusmentLayerInfo(String key, Layer layer)
+            public AdjusmentLayerInfo(string key, Layer layer)
             {
                 Key = key;
                 Layer = layer;
@@ -58,23 +58,23 @@ namespace System.Drawing.PSD
 
                 Layer = layer;
 
-                String signature = new String(reader.ReadChars(4));
+                string signature = new string(reader.ReadChars(4));
                 if (signature != "8BIM")
                 {
                     throw new IOException("Could not read an image resource");
                 }
 
-                Key = new String(reader.ReadChars(4));
+                Key = new string(reader.ReadChars(4));
 
                 UInt32 dataLength = reader.ReadUInt32();
-                Data = reader.ReadBytes((Int32)dataLength);
+                Data = reader.ReadBytes((int)dataLength);
             }
 
             public void Save(BinaryReverseWriter writer)
             {
                 Debug.WriteLine("AdjusmentLayerInfo Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-                const String signature = "8BIM";
+                const string signature = "8BIM";
 
                 writer.Write(signature.ToCharArray());
                 writer.Write(Key.ToCharArray());
