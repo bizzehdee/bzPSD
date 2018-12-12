@@ -173,7 +173,7 @@ namespace System.Drawing.PSD
 			{
 				Debug.WriteLine("Mask.LoadPixelData started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-				if (Rect.IsEmpty || Layer.SortedChannels.ContainsKey(-2) == false)
+				if (Layer.SortedChannels.ContainsKey(-2) == false)
 					return;
 
 				Channel maskChannel = Layer.SortedChannels[-2];
@@ -181,6 +181,8 @@ namespace System.Drawing.PSD
 
 				maskChannel.Data = reader.ReadBytes(maskChannel.Length);
 
+				if (Rect.IsEmpty)
+					return;
 
 				using (BinaryReverseReader readerImg = maskChannel.DataReader)
 				{
