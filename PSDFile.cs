@@ -388,7 +388,7 @@ namespace System.Drawing.PSD
 
 			foreach (Layer layer in Layers)
 			{
-				foreach (Layer.Channel channel in layer.Channels.Where(c => c.ID != -2))
+				foreach (Layer.Channel channel in layer.Channels)
 				{
 					channel.LoadPixelData(reader);
 				}
