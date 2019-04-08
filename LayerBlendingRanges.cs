@@ -31,39 +31,40 @@ using System.Globalization;
 
 namespace System.Drawing.PSD
 {
-	public partial class Layer
-	{
-		public class BlendingRanges
-		{
-			public Layer Layer { get; private set; }
-            public Byte[] Data { get; private set; }
+    public partial class Layer
+    {
+        public class BlendingRanges
+        {
+            public Layer Layer { get; private set; }
 
-			public BlendingRanges(Layer layer)
-			{
-				Data = new Byte[0];
-				Layer = layer;
-				Layer.BlendingRangesData = this;
-			}
+            public byte[] Data { get; private set; }
 
-			public BlendingRanges(BinaryReverseReader reader, Layer layer)
-			{
-				Data = new Byte[0];
-				Debug.WriteLine("BlendingRanges started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+            public BlendingRanges(Layer layer)
+            {
+                Data = new byte[0];
+                Layer = layer;
+                Layer.BlendingRangesData = this;
+            }
 
-				Layer = layer;
-				Int32 dataLength = reader.ReadInt32();
-				if (dataLength <= 0) return;
+            public BlendingRanges(BinaryReverseReader reader, Layer layer)
+            {
+                Data = new byte[0];
+                Debug.WriteLine("BlendingRanges started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-				Data = reader.ReadBytes(dataLength);
-			}
+                Layer = layer;
+                int dataLength = reader.ReadInt32();
+                if (dataLength <= 0) return;
 
-			public void Save(BinaryReverseWriter writer)
-			{
-				Debug.WriteLine("BlendingRanges Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+                Data = reader.ReadBytes(dataLength);
+            }
 
-				writer.Write((UInt32)Data.Length);
-				writer.Write(Data);
-			}
-		}
-	}
+            public void Save(BinaryReverseWriter writer)
+            {
+                Debug.WriteLine("BlendingRanges Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+                writer.Write((UInt32)Data.Length);
+                writer.Write(Data);
+            }
+        }
+    }
 }

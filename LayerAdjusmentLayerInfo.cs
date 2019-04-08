@@ -32,62 +32,61 @@ using System.IO;
 
 namespace System.Drawing.PSD
 {
-	public partial class Layer
-	{
-		public class AdjusmentLayerInfo
-		{
-			/// <summary>
-			/// The layer to which this info belongs
-			/// </summary>
+    public partial class Layer
+    {
+        public class AdjusmentLayerInfo
+        {
+            /// <summary>
+            /// The layer to which this info belongs
+            /// </summary>
             private Layer Layer { get; set; }
-            public String Key { get; private set; }
-            public Byte[] Data { get; private set; }
 
-			public AdjusmentLayerInfo(String key, Layer layer)
-			{
-				Key = key;
-				Layer = layer;
-				Layer.AdjustmentInfo.Add(this);
-			}
+            public string Key { get; private set; }
 
-			public AdjusmentLayerInfo(BinaryReverseReader reader, Layer layer)
-			{
-				Debug.WriteLine("AdjusmentLayerInfo started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+            public byte[] Data { get; private set; }
 
-				Layer = layer;
+            public AdjusmentLayerInfo(string key, Layer layer)
+            {
+                Key = key;
+                Layer = layer;
+                Layer.AdjustmentInfo.Add(this);
+            }
 
-				String signature = new String(reader.ReadChars(4));
-				if (signature != "8BIM")
-				{
-					throw new IOException("Could not read an image resource");
-				}
+            public AdjusmentLayerInfo(BinaryReverseReader reader, Layer layer)
+            {
+                Debug.WriteLine("AdjusmentLayerInfo started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-				Key = new String(reader.ReadChars(4));
+                Layer = layer;
 
-				UInt32 dataLength = reader.ReadUInt32();
-				Data = reader.ReadBytes((Int32)dataLength);
-			}
+                string signature = new string(reader.ReadChars(4));
+                if (signature != "8BIM")
+                {
+                    throw new IOException("Could not read an image resource");
+                }
 
-			public void Save(BinaryReverseWriter writer)
-			{
-				Debug.WriteLine("AdjusmentLayerInfo Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+                Key = new string(reader.ReadChars(4));
 
-				const String signature = "8BIM";
+                UInt32 dataLength = reader.ReadUInt32();
+                Data = reader.ReadBytes((int)dataLength);
+            }
 
-				writer.Write(signature.ToCharArray());
-				writer.Write(Key.ToCharArray());
-				writer.Write((UInt32)Data.Length);
-				writer.Write(Data);
-			}
+            public void Save(BinaryReverseWriter writer)
+            {
+                Debug.WriteLine("AdjusmentLayerInfo Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-			public BinaryReverseReader DataReader
-			{
-				get
-				{
-					return new BinaryReverseReader(new MemoryStream(Data));
-				}
-			}
-		}
+                const string signature = "8BIM";
 
-	}
+                writer.Write(signature.ToCharArray());
+                writer.Write(Key.ToCharArray());
+                writer.Write((UInt32)Data.Length);
+                writer.Write(Data);
+            }
+
+            public BinaryReverseReader DataReader
+            {
+                get => new BinaryReverseReader(new MemoryStream(Data));
+            }
+        }
+
+    }
 }
