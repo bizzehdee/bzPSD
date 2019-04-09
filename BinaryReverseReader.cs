@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.IO;
 using System.Text;
 
@@ -34,7 +35,7 @@ namespace System.Drawing.PSD
     /// <summary>
     /// Reads primitive data types as binary values in in big-endian format
     /// </summary>
-    public class BinaryReverseReader : BinaryReader
+    public sealed class BinaryReverseReader : BinaryReader
     {
         public BinaryReverseReader(Stream stream)
             : base(stream)
