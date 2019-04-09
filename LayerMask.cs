@@ -36,48 +36,9 @@ namespace System.Drawing.PSD
     {
         public class Mask
         {
-            /// <summary>
-            /// The layer to which this mask belongs.
-            /// </summary>
-            public Layer Layer { get; private set; }
-
-            /// <summary>
-            /// The rectangle enclosing the mask.
-            /// </summary>
-            public Rectangle Rect { get; private set; }
-
-            public byte DefaultColor { get; private set; }
-
             private static readonly int PositionIsRelativeBit = BitVector32.CreateMask();
-
             private static readonly int DisabledBit = BitVector32.CreateMask(PositionIsRelativeBit);
             private static readonly int _invertOnBlendBit = BitVector32.CreateMask(DisabledBit);
-
-            private BitVector32 _flags;
-
-            /// <summary>
-            /// If true, the position of the mask is relative to the layer.
-            /// </summary>
-            public bool PositionIsRelative
-            {
-                get => _flags[PositionIsRelativeBit];
-                private set => _flags[PositionIsRelativeBit] = value;
-            }
-
-            public bool Disabled
-            {
-                get => _flags[DisabledBit];
-                private set { _flags[DisabledBit] = value; }
-            }
-
-            /// <summary>
-            /// if true, invert the mask when blending.
-            /// </summary>
-            public bool InvertOnBlendBit
-            {
-                get => _flags[_invertOnBlendBit];
-                private set { _flags[_invertOnBlendBit] = value; }
-            }
 
             internal Mask(Layer layer)
             {
@@ -115,7 +76,6 @@ namespace System.Drawing.PSD
 
                 if (maskLength == 36)
                 {
-#pragma warning disable 168
                     var realFlags = new BitVector32(reader.ReadByte());
 
                     byte realUserMaskBackground = reader.ReadByte();
@@ -127,7 +87,6 @@ namespace System.Drawing.PSD
                         Height = reader.ReadInt32() - Rect.Y,
                         Width = reader.ReadInt32() - Rect.X
                     };
-#pragma warning restore 168
                 }
 
                 // there is other stuff following, but we will ignore this.
@@ -161,6 +120,44 @@ namespace System.Drawing.PSD
             }
 
             public byte[] ImageData { get; set; }
+
+            /// <summary>
+            /// The layer to which this mask belongs.
+            /// </summary>
+            public Layer Layer { get; }
+
+            /// <summary>
+            /// The rectangle enclosing the mask.
+            /// </summary>
+            public Rectangle Rect { get; private set; }
+
+            public byte DefaultColor { get; private set; }
+
+            private BitVector32 _flags;
+
+            /// <summary>
+            /// If true, the position of the mask is relative to the layer.
+            /// </summary>
+            public bool PositionIsRelative
+            {
+                get => _flags[PositionIsRelativeBit];
+                private set => _flags[PositionIsRelativeBit] = value;
+            }
+
+            public bool Disabled
+            {
+                get => _flags[DisabledBit];
+                private set { _flags[DisabledBit] = value; }
+            }
+
+            /// <summary>
+            /// if true, invert the mask when blending.
+            /// </summary>
+            public bool InvertOnBlendBit
+            {
+                get => _flags[_invertOnBlendBit];
+                private set { _flags[_invertOnBlendBit] = value; }
+            }
 
             internal void LoadPixelData(BinaryReverseReader reader)
             {
