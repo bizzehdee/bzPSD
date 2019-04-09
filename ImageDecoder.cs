@@ -137,24 +137,24 @@ namespace System.Drawing.PSD
 
             switch (psdFile.ColorMode)
             {
-                case PsdFile.ColorModes.RGB:
+                case ColorMode.RGB:
                     c = Color.FromArgb(alpha, red, green, blue);
                     break;
-                case PsdFile.ColorModes.CMYK:
+                case ColorMode.CMYK:
                     c = CMYKToRGB(red, green, blue, alpha);
                     break;
-                case PsdFile.ColorModes.Multichannel:
+                case ColorMode.Multichannel:
                     c = CMYKToRGB(red, green, blue, 0);
                     break;
-                case PsdFile.ColorModes.Grayscale:
-                case PsdFile.ColorModes.Duotone:
+                case ColorMode.Grayscale:
+                case ColorMode.Duotone:
                     c = Color.FromArgb(red, red, red);
                     break;
-                case PsdFile.ColorModes.Indexed:
+                case ColorMode.Indexed:
                     int index = red;
                     c = Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
                     break;
-                case PsdFile.ColorModes.Lab:
+                case ColorMode.Lab:
                     c = LabToRGB(red, green, blue);
                     break;
             }
@@ -168,26 +168,26 @@ namespace System.Drawing.PSD
 
             switch (layer.PsdFile.ColorMode)
             {
-                case PsdFile.ColorModes.RGB:
+                case ColorMode.RGB:
                     c = Color.FromArgb(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos]);
                     break;
-                case PsdFile.ColorModes.CMYK:
+                case ColorMode.CMYK:
                     c = CMYKToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos], layer.SortedChannels[3].ImageData[pos]);
                     break;
-                case PsdFile.ColorModes.Multichannel:
+                case ColorMode.Multichannel:
                     c = CMYKToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos], 0);
                     break;
-                case PsdFile.ColorModes.Grayscale:
-                case PsdFile.ColorModes.Duotone:
+                case ColorMode.Grayscale:
+                case ColorMode.Duotone:
                     c = Color.FromArgb(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[0].ImageData[pos]);
                     break;
-                case PsdFile.ColorModes.Indexed:
+                case ColorMode.Indexed:
                     {
                         int index = layer.SortedChannels[0].ImageData[pos];
                         c = Color.FromArgb(layer.PsdFile.ColorModeData[index], layer.PsdFile.ColorModeData[index + 256], layer.PsdFile.ColorModeData[index + 2 * 256]);
                     }
                     break;
-                case PsdFile.ColorModes.Lab:
+                case ColorMode.Lab:
                     {
                         c = LabToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos]);
                     }
@@ -260,7 +260,7 @@ namespace System.Drawing.PSD
             return XYZToRGB(x, y, z);
         }
 
-        private static Color XYZToRGB(Double x, Double y, Double z)
+        private static Color XYZToRGB(double x, double y, double z)
         {
             // Standards used Observer = 2, Illuminant = D65
             // ref_X = 95.047, ref_Y = 100.000, ref_Z = 108.883
