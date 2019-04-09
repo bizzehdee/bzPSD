@@ -26,39 +26,39 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.Collections.Generic;
 using System.IO;
 
 namespace System.Drawing.PSD
 {
-    public class AlphaChannels : ImageResource
+    public sealed class AlphaChannels : ImageResource
     {
-        private List<string> _channelNames;
-        public IEnumerable<string> ChannelNames { get { return _channelNames; } }
+        private readonly List<string> _channelNames = new List<string>();
 
         public AlphaChannels()
-            : base((Int16)ResourceIDs.AlphaChannelNames)
+            : base((short)ResourceIDs.AlphaChannelNames)
         {
-            _channelNames = new List<String>();
         }
 
         public AlphaChannels(ImageResource imageResource)
             : base(imageResource)
         {
-            _channelNames = new List<string>();
-
             using (BinaryReverseReader reverseReader = imageResource.DataReader)
             {
                 // the names are pascal strings without padding!!!
                 while ((reverseReader.BaseStream.Length - reverseReader.BaseStream.Position) > 0)
                 {
                     byte stringLength = reverseReader.ReadByte();
+
                     string s = new string(reverseReader.ReadChars(stringLength));
 
                     if (s.Length > 0) _channelNames.Add(s);
                 }
             }
         }
+
+        public IEnumerable<string> ChannelNames => _channelNames;
 
         protected override void StoreData()
         {
@@ -73,7 +73,6 @@ namespace System.Drawing.PSD
 
                 Data = memoryStream.ToArray();
             }
-
         }
     }
 }
