@@ -37,7 +37,7 @@ namespace System.Drawing.PSD
         public class Mask
         {
             /// <summary>
-            /// The layer to which this mask belongs
+            /// The layer to which this mask belongs.
             /// </summary>
             public Layer Layer { get; private set; }
 
@@ -51,32 +51,22 @@ namespace System.Drawing.PSD
             private static readonly int PositionIsRelativeBit = BitVector32.CreateMask();
 
             private static readonly int DisabledBit = BitVector32.CreateMask(PositionIsRelativeBit);
-
-            // ReSharper disable InconsistentNaming
             private static readonly int _invertOnBlendBit = BitVector32.CreateMask(DisabledBit);
 
-            // ReSharper restore InconsistentNaming
-
             private BitVector32 _flags;
+
             /// <summary>
             /// If true, the position of the mask is relative to the layer.
             /// </summary>
-            /// 
             public bool PositionIsRelative
             {
-                get
-                {
-                    return _flags[PositionIsRelativeBit];
-                }
-                private set
-                {
-                    _flags[PositionIsRelativeBit] = value;
-                }
+                get => _flags[PositionIsRelativeBit];
+                private set => _flags[PositionIsRelativeBit] = value;
             }
 
             public bool Disabled
             {
-                get { return _flags[DisabledBit]; }
+                get => _flags[DisabledBit];
                 private set { _flags[DisabledBit] = value; }
             }
 
@@ -85,7 +75,7 @@ namespace System.Drawing.PSD
             /// </summary>
             public bool InvertOnBlendBit
             {
-                get { return _flags[_invertOnBlendBit]; }
+                get => _flags[_invertOnBlendBit];
                 private set { _flags[_invertOnBlendBit] = value; }
             }
 
@@ -108,7 +98,7 @@ namespace System.Drawing.PSD
 
                 long startPosition = reader.BaseStream.Position;
 
-                Rectangle localRectangle = new Rectangle
+                var localRectangle = new Rectangle
                 {
                     Y = reader.ReadInt32(),
                     X = reader.ReadInt32()
@@ -126,11 +116,11 @@ namespace System.Drawing.PSD
                 if (maskLength == 36)
                 {
 #pragma warning disable 168
-                    BitVector32 realFlags = new BitVector32(reader.ReadByte());
+                    var realFlags = new BitVector32(reader.ReadByte());
 
                     byte realUserMaskBackground = reader.ReadByte();
 
-                    Rectangle rect = new Rectangle
+                    var rect = new Rectangle
                     {
                         Y = reader.ReadInt32(),
                         X = reader.ReadInt32(),
@@ -180,7 +170,6 @@ namespace System.Drawing.PSD
                     return;
 
                 Channel maskChannel = Layer.SortedChannels[-2];
-
 
                 maskChannel.Data = reader.ReadBytes(maskChannel.Length);
 
