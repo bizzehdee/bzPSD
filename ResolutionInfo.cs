@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.IO;
 
 namespace System.Drawing.PSD
@@ -33,17 +34,17 @@ namespace System.Drawing.PSD
     /// <summary>
     /// Summary description for ResolutionInfo.
     /// </summary>
-    public class ResolutionInfo : ImageResource
+    public sealed class ResolutionInfo : ImageResource
     {
         /// <summary>
         /// Fixed-point number: pixels per inch
         /// </summary>
-        public Int16 HRes { get; private set; }
+        public short HRes { get; private set; }
 
         /// <summary>
         /// Fixed-point number: pixels per inch
         /// </summary>
-        public Int16 VRes { get; private set; }
+        public short VRes { get; private set; }
 
         /// <summary>
         /// 1=pixels per inch, 2=pixels per centimeter
@@ -76,7 +77,7 @@ namespace System.Drawing.PSD
 
         public ResolutionInfo()
         {
-            ID = (Int16)ResourceIDs.ResolutionInfo;
+            ID = (short)ResourceIDs.ResolutionInfo;
         }
 
         public ResolutionInfo(ImageResource imgRes)
@@ -91,7 +92,6 @@ namespace System.Drawing.PSD
                 VRes = reverseReader.ReadInt16();
                 VResUnit = (ResUnit)reverseReader.ReadInt32();
                 HeightUnit = (Unit)reverseReader.ReadInt16();
-
             }
         }
 
@@ -101,12 +101,12 @@ namespace System.Drawing.PSD
             using (var reverseWriter = new BinaryReverseWriter(memoryStream))
             {
                 reverseWriter.Write(HRes);
-                reverseWriter.Write((Int32)HResUnit);
-                reverseWriter.Write((Int16)WidthUnit);
+                reverseWriter.Write((int)HResUnit);
+                reverseWriter.Write((short)WidthUnit);
 
                 reverseWriter.Write(VRes);
-                reverseWriter.Write((Int32)VResUnit);
-                reverseWriter.Write((Int16)HeightUnit);
+                reverseWriter.Write((int)VResUnit);
+                reverseWriter.Write((short)HeightUnit);
 
                 Data = memoryStream.ToArray();
             }
@@ -114,7 +114,7 @@ namespace System.Drawing.PSD
 
         public override string ToString()
         {
-            return String.Format("{0}{2}x{1}{3}", HRes, VRes, Enum.GetName(typeof(Unit), WidthUnit), Enum.GetName(typeof(Unit), HeightUnit));
+            return string.Format("{0}{2}x{1}{3}", HRes, VRes, Enum.GetName(typeof(Unit), WidthUnit), Enum.GetName(typeof(Unit), HeightUnit));
         }
     }
 }
