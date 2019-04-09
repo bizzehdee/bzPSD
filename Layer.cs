@@ -36,16 +36,116 @@ namespace System.Drawing.PSD
 {
     public partial class Layer
     {
-        internal PsdFile PsdFile { get; private set; }
+        private static readonly int ProtectTransBit = BitVector32.CreateMask();
+
+        private static readonly int VisibleBit = BitVector32.CreateMask(ProtectTransBit);
+
+        public Layer(PsdFile psdFile)
+        {
+            AdjustmentInfo = new List<AdjusmentLayerInfo>();
+            Channels = new List<Channel>();
+            Rect = Rectangle.Empty;
+            PsdFile = psdFile;
+        }
+
+        public Layer(BinaryReverseReader reverseReader, PsdFile psdFile)
+        {
+            AdjustmentInfo = new List<AdjusmentLayerInfo>();
+            Channels = new List<Channel>();
+            Debug.WriteLine("Layer started at " + reverseReader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+            PsdFile = psdFile;
+
+            var localRectangle = new Rectangle
+            {
+                Y = reverseReader.ReadInt32(),
+                X = reverseReader.ReadInt32()
+            };
+
+            localRectangle.Height = reverseReader.ReadInt32() - localRectangle.Y;
+            localRectangle.Width = reverseReader.ReadInt32() - localRectangle.X;
+
+            Rect = localRectangle;
+
+            int numberOfChannels = reverseReader.ReadUInt16();
+            Channels.Clear();
+            for (int channel = 0; channel < numberOfChannels; channel++)
+            {
+                Channel ch = new Channel(reverseReader, this);
+                Channels.Add(ch);
+                SortedChannels.Add(ch.ID, ch);
+            }
+
+            ReadOnlySpan<char> signature = reverseReader.ReadChars(4);
+
+            if (!signature.SequenceEqual("8BIM".AsSpan()))
+            {
+                throw (new IOException("Layer Channelheader error"));
+            }
+
+            _blendModeKeyStr = new string(reverseReader.ReadChars(4));
+            Opacity = reverseReader.ReadByte();
+
+            Clipping = reverseReader.ReadByte() > 0;
+
+            byte flags = reverseReader.ReadByte();
+            _flags = new BitVector32(flags);
+
+            reverseReader.ReadByte(); //padding
+
+            Debug.WriteLine("Layer extraDataSize started at " + reverseReader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+
+            // this is the total size of the MaskData, the BlendingRangesData, the 
+            // Name and the AdjustmenLayerInfo
+            uint extraDataSize = reverseReader.ReadUInt32();
+
+            // remember the start position for calculation of the 
+            // AdjustmenLayerInfo size
+            long extraDataStartPosition = reverseReader.BaseStream.Position;
+
+            MaskData = new Mask(reverseReader, this);
+            BlendingRangesData = new BlendingRanges(reverseReader, this);
+
+            long namePosition = reverseReader.BaseStream.Position;
+
+            Name = reverseReader.ReadPascalString();
+
+            int paddingBytes = (int)((reverseReader.BaseStream.Position - namePosition) % 4);
+
+            Debug.Print($"Layer {paddingBytes} padding bytes after name");
+            reverseReader.ReadBytes(paddingBytes);
+
+            AdjustmentInfo.Clear();
+
+            long adjustmenLayerEndPos = extraDataStartPosition + extraDataSize;
+            while (reverseReader.BaseStream.Position < adjustmenLayerEndPos)
+            {
+                try
+                {
+                    AdjustmentInfo.Add(new AdjusmentLayerInfo(reverseReader, this));
+                }
+                catch
+                {
+                    reverseReader.BaseStream.Position = adjustmenLayerEndPos;
+                }
+            }
+
+            // make shure we are not on a wrong offset, so set the stream position 
+            // manually
+            reverseReader.BaseStream.Position = adjustmenLayerEndPos;
+        }
+
+
+        internal PsdFile PsdFile { get; }
 
         /// <summary>
         /// The rectangle containing the contents of the layer.
         /// </summary>
-        public Rectangle Rect { get; private set; }
+        public Rectangle Rect { get; }
 
-        public List<Channel> Channels { get; private set; }
+        public List<Channel> Channels { get; }
 
-        public SortedList<Int16, Channel> SortedChannels { get; private set; }
+        public SortedList<short, Channel> SortedChannels { get; }
 
         /// <summary>
         /// The blend mode key for the layer
@@ -72,9 +172,10 @@ namespace System.Drawing.PSD
         /// </list>
         /// </remarks>
         private string _blendModeKeyStr = "norm";
+
         public string BlendModeKey
         {
-            get { return _blendModeKeyStr; }
+            get => _blendModeKeyStr;
             private set
             {
                 if (value.Length != 4) throw new ArgumentException("Key length must be 4");
@@ -85,15 +186,12 @@ namespace System.Drawing.PSD
         /// <summary>
         /// 0 = transparent ... 255 = opaque
         /// </summary>
-        public byte Opacity { get; private set; }
+        public byte Opacity { get; }
 
         /// <summary>
         /// false = base, true = nonbase
         /// </summary>
-        public bool Clipping { get; private set; }
-
-        private static readonly int ProtectTransBit = BitVector32.CreateMask();
-        private static readonly int VisibleBit = BitVector32.CreateMask(ProtectTransBit);
+        public bool Clipping { get; }
 
         BitVector32 _flags;
 
@@ -102,121 +200,29 @@ namespace System.Drawing.PSD
         /// </summary>
         public bool Visible
         {
-            get { return !_flags[VisibleBit]; }
+            get => !_flags[VisibleBit];
             private set { _flags[VisibleBit] = !value; }
         }
 
         /// <summary>
-        /// Protect the transparency
+        /// Protect the transparency.
         /// </summary>
         public bool ProtectTrans
         {
-            get { return _flags[ProtectTransBit]; }
+            get => _flags[ProtectTransBit];
             private set { _flags[ProtectTransBit] = value; }
         }
 
         /// <summary>
         /// The descriptive layer name
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         public BlendingRanges BlendingRangesData { get; set; }
+
         public Mask MaskData { get; private set; }
-        public List<AdjusmentLayerInfo> AdjustmentInfo { get; private set; }
 
-        public Layer(PsdFile psdFile)
-        {
-            AdjustmentInfo = new List<AdjusmentLayerInfo>();
-            SortedChannels = new SortedList<Int16, Channel>();
-            Channels = new List<Channel>();
-            Rect = Rectangle.Empty;
-            PsdFile = psdFile;
-        }
-
-        public Layer(BinaryReverseReader reverseReader, PsdFile psdFile)
-        {
-            AdjustmentInfo = new List<AdjusmentLayerInfo>();
-            SortedChannels = new SortedList<Int16, Channel>();
-            Channels = new List<Channel>();
-            Debug.WriteLine("Layer started at " + reverseReader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-            PsdFile = psdFile;
-
-            var localRectangle = new Rectangle
-            {
-                Y = reverseReader.ReadInt32(),
-                X = reverseReader.ReadInt32()
-            };
-
-            localRectangle.Height = reverseReader.ReadInt32() - localRectangle.Y;
-            localRectangle.Width = reverseReader.ReadInt32() - localRectangle.X;
-
-            Rect = localRectangle;
-
-            int numberOfChannels = reverseReader.ReadUInt16();
-            Channels.Clear();
-            for (int channel = 0; channel < numberOfChannels; channel++)
-            {
-                Channel ch = new Channel(reverseReader, this);
-                Channels.Add(ch);
-                SortedChannels.Add(ch.ID, ch);
-            }
-
-            string signature = new String(reverseReader.ReadChars(4));
-
-            if (signature != "8BIM") throw (new IOException("Layer Channelheader error"));
-
-            _blendModeKeyStr = new String(reverseReader.ReadChars(4));
-            Opacity = reverseReader.ReadByte();
-
-            Clipping = reverseReader.ReadByte() > 0;
-
-            byte flags = reverseReader.ReadByte();
-            _flags = new BitVector32(flags);
-
-            reverseReader.ReadByte(); //padding
-
-            Debug.WriteLine("Layer extraDataSize started at " + reverseReader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-
-            // this is the total size of the MaskData, the BlendingRangesData, the 
-            // Name and the AdjustmenLayerInfo
-            UInt32 extraDataSize = reverseReader.ReadUInt32();
-
-            // remember the start position for calculation of the 
-            // AdjustmenLayerInfo size
-            long extraDataStartPosition = reverseReader.BaseStream.Position;
-
-            MaskData = new Mask(reverseReader, this);
-            BlendingRangesData = new BlendingRanges(reverseReader, this);
-
-            long namePosition = reverseReader.BaseStream.Position;
-
-            Name = reverseReader.ReadPascalString();
-
-            int paddingBytes = (int)((reverseReader.BaseStream.Position - namePosition) % 4);
-
-            Debug.Print("Layer {0} padding bytes after name", paddingBytes);
-            reverseReader.ReadBytes(paddingBytes);
-
-            AdjustmentInfo.Clear();
-
-            Int64 adjustmenLayerEndPos = extraDataStartPosition + extraDataSize;
-            while (reverseReader.BaseStream.Position < adjustmenLayerEndPos)
-            {
-                try
-                {
-                    AdjustmentInfo.Add(new AdjusmentLayerInfo(reverseReader, this));
-                }
-                catch
-                {
-                    reverseReader.BaseStream.Position = adjustmenLayerEndPos;
-                }
-            }
-
-            // make shure we are not on a wrong offset, so set the stream position 
-            // manually
-            reverseReader.BaseStream.Position = adjustmenLayerEndPos;
-        }
+        public List<AdjusmentLayerInfo> AdjustmentInfo { get; }
 
         public void Save(BinaryReverseWriter reverseWriter)
         {
@@ -227,7 +233,7 @@ namespace System.Drawing.PSD
             reverseWriter.Write(Rect.Bottom);
             reverseWriter.Write(Rect.Right);
 
-            reverseWriter.Write((Int16)Channels.Count);
+            reverseWriter.Write((short)Channels.Count);
             foreach (Channel ch in Channels) ch.Save(reverseWriter);
 
             const string signature = "8BIM";
@@ -261,7 +267,7 @@ namespace System.Drawing.PSD
 
         public override string ToString()
         {
-            return String.Format("{0} {1} {2}", Name, Visible ? "Visible" : "Hidden", BlendModeKey);
+            return string.Format("{0} {1} {2}", Name, Visible ? "Visible" : "Hidden", BlendModeKey);
         }
     }
 }
