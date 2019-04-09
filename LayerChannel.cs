@@ -37,7 +37,7 @@ namespace System.Drawing.PSD
         public class Channel
         {
             /// <summary>
-            /// The layer to which this channel belongs
+            /// The layer to which this channel belongs.
             /// </summary>
             public Layer Layer { get; private set; }
 
@@ -46,7 +46,7 @@ namespace System.Drawing.PSD
             /// 1 = transparency mask
             /// 2 = user supplied layer mask
             /// </summary>
-            public Int16 ID { get; private set; }
+            public short ID { get; private set; }
 
             /// <summary>
             /// The length of the compressed channel data.
@@ -54,7 +54,7 @@ namespace System.Drawing.PSD
             public int Length { get; private set; }
 
             /// <summary>
-            /// The compressed raw channel data
+            /// The compressed raw channel data.
             /// </summary>
             public byte[] Data { get; set; }
 
@@ -62,7 +62,7 @@ namespace System.Drawing.PSD
 
             public ImageCompression ImageCompression { get; set; }
 
-            internal Channel(Int16 id, Layer layer)
+            internal Channel(short id, Layer layer)
             {
                 ID = id;
                 Layer = layer;
@@ -162,9 +162,9 @@ namespace System.Drawing.PSD
 
                     if (ImageCompression == ImageCompression.Rle)
                     {
-                        for (Int32 i = 0; i < rleRowLenghs.Length; i++)
+                        for (int i = 0; i < rleRowLenghs.Length; i++)
                         {
-                            reverseWriter.Write((Int16)0x1234);
+                            reverseWriter.Write((short)0x1234);
                         }
                     }
 
@@ -195,7 +195,7 @@ namespace System.Drawing.PSD
 
                     foreach (int length in rleRowLenghs)
                     {
-                        reverseWriter.Write((Int16)length);
+                        reverseWriter.Write((short)length);
                     }
 
                     reverseWriter.BaseStream.Position = endPosition;
