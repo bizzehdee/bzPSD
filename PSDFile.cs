@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -36,12 +37,19 @@ namespace System.Drawing.PSD
 {
     public class PsdFile
     {
-        public enum ColorModes
-        {
-            Bitmap = 0, Grayscale = 1, Indexed = 2, RGB = 3, CMYK = 4, Multichannel = 7, Duotone = 8, Lab = 9
-        };
+        private List<Layer> _layers;
+        private byte[] _globalLayerMaskData = Array.Empty<byte>(); // Masking data for the PSD
+        private short _channels;
+        private int _rows;
+        private int _depth;
+        private int _columns;
 
-        #region "Properties and Variables"
+        public PsdFile()
+        {
+            _layers = new List<Layer>();
+            Version = 1;
+            _imageResources = new List<ImageResource>();
+        }
 
         /// <summary>
         /// If ColorMode is ColorModes.Indexed, the following 768 bytes will contain 
@@ -52,12 +60,8 @@ namespace System.Drawing.PSD
         /// </summary>
         public byte[] ColorModeData = Array.Empty<byte>();
 
-        //Masking data for the PSD
-        private byte[] _globalLayerMaskData = Array.Empty<byte>();
-
         public short Version { get; private set; }
 
-        private short _channels;
 
         /// <summary>
         /// The number of channels in the image, including any alpha channels.
@@ -73,14 +77,12 @@ namespace System.Drawing.PSD
             }
         }
 
-
-        private int _rows;
         /// <summary>
         /// The height of the image in pixels.
         /// </summary>
         public int Rows
         {
-            get { return _rows; }
+            get => _rows;
             private set
             {
                 if (value < 0 || value > 30000) throw new ArgumentException("Supported range is 1 to 30000.");
@@ -88,14 +90,12 @@ namespace System.Drawing.PSD
             }
         }
 
-
-        private int _columns;
         /// <summary>
         /// The width of the image in pixels. 
         /// </summary>
         public int Columns
         {
-            get { return _columns; }
+            get => _columns;
             private set
             {
                 if (value < 0 || value > 30000)
@@ -104,14 +104,12 @@ namespace System.Drawing.PSD
             }
         }
 
-
-        private Int32 _depth;
         /// <summary>
         /// The number of bits per channel. Supported values are 1, 8, and 16.
         /// </summary>
-        public Int32 Depth
+        public int Depth
         {
-            get { return _depth; }
+            get =>_depth;
             private set
             {
                 if (value == 1 || value == 8 || value == 16)
@@ -128,15 +126,13 @@ namespace System.Drawing.PSD
         /// <summary>
         /// The color mode of the file.
         /// </summary>
-        public ColorModes ColorMode { get; private set; }
-
-        private List<Layer> _layers;
+        public ColorMode ColorMode { get; private set; }
 
         public IEnumerable<Layer> Layers => _layers;
 
-        public Boolean AbsoluteAlpha { get; private set; }
+        public bool AbsoluteAlpha { get; private set; }
 
-        public Byte[][] ImageData { get; private set; }
+        public byte[][] ImageData { get; private set; }
 
         public ImageCompression ImageCompression { get; private set; }
 
@@ -145,12 +141,12 @@ namespace System.Drawing.PSD
         /// <summary>
         /// The Image resource blocks for the file
         /// </summary>
-        public IEnumerable<ImageResource> ImageResources { get { return _imageResources; } }
+        public IEnumerable<ImageResource> ImageResources => _imageResources; 
 
         public ResolutionInfo Resolution
         {
             get => (ResolutionInfo)_imageResources.Find(x => x.ID == (int)ResourceIDs.ResolutionInfo);
-            
+
             private set
             {
                 ImageResource oldValue = _imageResources.Find(x => x.ID == (int)ResourceIDs.ResolutionInfo);
@@ -161,14 +157,6 @@ namespace System.Drawing.PSD
 
                 _imageResources.Add(value);
             }
-        }
-        #endregion //End Properties
-
-        public PsdFile()
-        {
-            _layers = new List<Layer>();
-            Version = 1;
-            _imageResources = new List<ImageResource>();
         }
 
         public PsdFile Load(string filename)
@@ -212,7 +200,7 @@ namespace System.Drawing.PSD
             _rows = reader.ReadInt32();
             _columns = reader.ReadInt32();
             _depth = reader.ReadInt16();
-            ColorMode = (ColorModes)reader.ReadInt16();
+            ColorMode = (ColorMode)reader.ReadInt16();
 
             //by end of headers, the reader has read 26 bytes into the file.
             #endregion //End Headers
@@ -354,23 +342,23 @@ namespace System.Drawing.PSD
             #endregion //End LoadingFinalImage
 
             return this;
-        } //end Load()
+        }
 
         /// <summary>
-        /// Loads up the Layers of the supplied PSD file
+        /// Loads up the Layers of the supplied PSD file.
         /// </summary>      
         private void LoadLayers(BinaryReverseReader reader)
         {
             Debug.WriteLine("LoadLayers started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-            UInt32 layersInfoSectionLength = reader.ReadUInt32();
+            uint layersInfoSectionLength = reader.ReadUInt32();
 
             if (layersInfoSectionLength <= 0)
                 return;
 
             long startPosition = reader.BaseStream.Position;
 
-            Int16 numberOfLayers = reader.ReadInt16();
+            short numberOfLayers = reader.ReadInt16();
 
             // If <0, then number of layers is absolute value,
             // and the first alpha channel contains the transparency data for
@@ -385,7 +373,7 @@ namespace System.Drawing.PSD
 
             if (numberOfLayers == 0) return;
 
-            for (Int32 i = 0; i < numberOfLayers; i++)
+            for (int i = 0; i < numberOfLayers; i++)
             {
                 _layers.Add(new Layer(reader, this));
             }
@@ -414,7 +402,7 @@ namespace System.Drawing.PSD
         {
             Debug.WriteLine("LoadGlobalLayerMask started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-            UInt32 maskLength = reader.ReadUInt32();
+            uint maskLength = reader.ReadUInt32();
 
             if (maskLength <= 0) return;
 
