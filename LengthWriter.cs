@@ -26,11 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 namespace System.Drawing.PSD
 {
-    class LengthWriter : IDisposable
+    public ref struct LengthWriter
     {
-        private long _lengthPosition = long.MinValue;
+        private long _lengthPosition;
         private readonly long _startPosition;
         private readonly BinaryReverseWriter _reverseWriter;
 
@@ -46,6 +47,8 @@ namespace System.Drawing.PSD
             // remember the start  position for calculation Image 
             // resources length
             _startPosition = _reverseWriter.BaseStream.Position;
+
+            _lengthPosition = long.MinValue;
         }
 
         public void Write()
