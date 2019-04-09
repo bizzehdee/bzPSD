@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -36,15 +37,6 @@ namespace System.Drawing.PSD
     {
         public class AdjusmentLayerInfo
         {
-            /// <summary>
-            /// The layer to which this info belongs
-            /// </summary>
-            private Layer Layer { get; set; }
-
-            public string Key { get; private set; }
-
-            public byte[] Data { get; private set; }
-
             public AdjusmentLayerInfo(string key, Layer layer)
             {
                 Key = key;
@@ -58,17 +50,28 @@ namespace System.Drawing.PSD
 
                 Layer = layer;
 
-                string signature = new string(reader.ReadChars(4));
-                if (signature != "8BIM")
+                ReadOnlySpan<char> signature = reader.ReadChars(4);
+
+                if (!signature.SequenceEqual("8BIM".AsSpan()))
                 {
                     throw new IOException("Could not read an image resource");
                 }
 
                 Key = new string(reader.ReadChars(4));
 
-                UInt32 dataLength = reader.ReadUInt32();
+                uint dataLength = reader.ReadUInt32();
+
                 Data = reader.ReadBytes((int)dataLength);
             }
+
+            /// <summary>
+            /// The layer to which this info belongs
+            /// </summary>
+            private Layer Layer { get; set; }
+
+            public string Key { get; }
+
+            public byte[] Data { get; }
 
             public void Save(BinaryReverseWriter writer)
             {
@@ -78,7 +81,7 @@ namespace System.Drawing.PSD
 
                 writer.Write(signature.ToCharArray());
                 writer.Write(Key.ToCharArray());
-                writer.Write((UInt32)Data.Length);
+                writer.Write((uint)Data.Length);
                 writer.Write(Data);
             }
 
