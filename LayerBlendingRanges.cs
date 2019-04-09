@@ -33,12 +33,8 @@ namespace System.Drawing.PSD
 {
     public partial class Layer
     {
-        public class BlendingRanges
+        public sealed class BlendingRanges
         {
-            public Layer Layer { get; private set; }
-
-            public byte[] Data { get; private set; }
-
             public BlendingRanges(Layer layer)
             {
                 Data = new byte[0];
@@ -62,9 +58,13 @@ namespace System.Drawing.PSD
             {
                 Debug.WriteLine("BlendingRanges Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-                writer.Write((UInt32)Data.Length);
+                writer.Write((uint)Data.Length);
                 writer.Write(Data);
             }
+
+            public Layer Layer { get; }
+
+            public byte[] Data { get; }
         }
     }
 }
