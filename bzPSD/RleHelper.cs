@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 using System.IO;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
     class RleHelper
     {
@@ -44,7 +44,7 @@ namespace System.Drawing.PSD
                 byte header;
                 if (_rlePacket)
                 {
-                    header = (byte)(-(_packetLength - 1));
+                    header = (byte)-(_packetLength - 1);
                 }
                 else
                 {
@@ -53,7 +53,7 @@ namespace System.Drawing.PSD
 
                 _stream.WriteByte(header);
 
-                int length = (_rlePacket ? 1 : _packetLength);
+                int length = _rlePacket ? 1 : _packetLength;
 
                 _stream.Write(_packetValues, 0, length);
 
@@ -70,7 +70,7 @@ namespace System.Drawing.PSD
                         _packetLength = 1;
                         break;
                     case 1:
-                        _rlePacket = (color == _packetValues[0]);
+                        _rlePacket = color == _packetValues[0];
                         _packetValues[1] = color;
                         _packetLength = 2;
                         break;
@@ -147,7 +147,7 @@ namespace System.Drawing.PSD
                 if (len < 128)
                 {
                     len++;
-                    while (len != 0 && (startIdx + count) < imgData.Length)
+                    while (len != 0 && startIdx + count < imgData.Length)
                     {
                         byteValue = (byte)stream.ReadByte();
 
@@ -164,7 +164,7 @@ namespace System.Drawing.PSD
                     len += 2;
                     byteValue = (byte)stream.ReadByte();
 
-                    while (len != 0 && (startIdx + count) < imgData.Length)
+                    while (len != 0 && startIdx + count < imgData.Length)
                     {
                         imgData[startIdx + count] = byteValue;
                         count++;

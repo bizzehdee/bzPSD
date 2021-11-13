@@ -26,46 +26,46 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+using bzPSD;
+using System.Diagnostics;
+using System.Globalization;
+
 namespace System.Drawing.PSD
 {
-    public class Utilities
+    public partial class Layer
     {
-        public static UInt16 SwapBytes(UInt16 x)
+        public sealed class BlendingRanges
         {
-            return (ushort)((ushort)((x & 0xff) << 8) | ((x >> 8) & 0xff));
-        }
+            public BlendingRanges(Layer layer)
+            {
+                Data = new byte[0];
+                Layer = layer;
+                Layer.BlendingRangesData = this;
+            }
 
-        public static UInt32 SwapBytes(UInt32 x)
-        {
-            // swap adjacent 16-bit blocks
-            x = (x >> 16) | (x << 16);
-            // swap adjacent 8-bit blocks
-            return ((x & 0xFF00FF00) >> 8) | ((x & 0x00FF00FF) << 8);
-        }
+            public BlendingRanges(BinaryReverseReader reader, Layer layer)
+            {
+                Data = new byte[0];
+                Debug.WriteLine("BlendingRanges started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-        public static UInt64 SwapBytes(UInt64 x)
-        {
-            // swap adjacent 32-bit blocks
-            x = (x >> 32) | (x << 32);
-            // swap adjacent 16-bit blocks
-            x = ((x & 0xFFFF0000FFFF0000) >> 16) | ((x & 0x0000FFFF0000FFFF) << 16);
-            // swap adjacent 8-bit blocks
-            return ((x & 0xFF00FF00FF00FF00) >> 8) | ((x & 0x00FF00FF00FF00FF) << 8);
-        }
+                Layer = layer;
+                int dataLength = reader.ReadInt32();
+                if (dataLength <= 0) return;
 
-        public static Int16 SwapBytes(Int16 x)
-        {
-            return (Int16)SwapBytes((UInt16)x);
-        }
+                Data = reader.ReadBytes(dataLength);
+            }
 
-        public static Int32 SwapBytes(Int32 x)
-        {
-            return (Int32)SwapBytes((UInt32)x);
-        }
+            public void Save(BinaryReverseWriter writer)
+            {
+                Debug.WriteLine("BlendingRanges Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-        public static Int64 SwapBytes(Int64 x)
-        {
-            return (Int64)SwapBytes((UInt64)x);
+                writer.Write((uint)Data.Length);
+                writer.Write(Data);
+            }
+
+            public Layer Layer { get; }
+
+            public byte[] Data { get; }
         }
     }
 }

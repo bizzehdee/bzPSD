@@ -27,62 +27,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
-using System.IO;
-using System.Text;
-
-namespace System.Drawing.PSD
+namespace bzPSD
 {
-    /// <summary>
-    /// Reads primitive data types as binary values in in big-endian format
-    /// </summary>
-    public sealed class BinaryReverseReader : BinaryReader
+    public class Utilities
     {
-        public BinaryReverseReader(Stream stream)
-            : base(stream)
+        public static ushort SwapBytes(ushort x)
         {
+            return (ushort)((ushort)((x & 0xff) << 8) | x >> 8 & 0xff);
         }
 
-        public override Int16 ReadInt16()
+        public static uint SwapBytes(uint x)
         {
-            return Utilities.SwapBytes(base.ReadInt16());
+            // swap adjacent 16-bit blocks
+            x = x >> 16 | x << 16;
+            // swap adjacent 8-bit blocks
+            return (x & 0xFF00FF00) >> 8 | (x & 0x00FF00FF) << 8;
         }
 
-        public override Int32 ReadInt32()
+        public static ulong SwapBytes(ulong x)
         {
-            return Utilities.SwapBytes(base.ReadInt32());
+            // swap adjacent 32-bit blocks
+            x = x >> 32 | x << 32;
+            // swap adjacent 16-bit blocks
+            x = (x & 0xFFFF0000FFFF0000) >> 16 | (x & 0x0000FFFF0000FFFF) << 16;
+            // swap adjacent 8-bit blocks
+            return (x & 0xFF00FF00FF00FF00) >> 8 | (x & 0x00FF00FF00FF00FF) << 8;
         }
 
-        public override Int64 ReadInt64()
+        public static short SwapBytes(short x)
         {
-            return Utilities.SwapBytes(base.ReadInt64());
+            return (short)SwapBytes((ushort)x);
         }
 
-        public override UInt16 ReadUInt16()
+        public static int SwapBytes(int x)
         {
-            return Utilities.SwapBytes(base.ReadUInt16());
+            return (int)SwapBytes((uint)x);
         }
 
-        public override UInt32 ReadUInt32()
+        public static long SwapBytes(long x)
         {
-            return Utilities.SwapBytes(base.ReadUInt32());
-        }
-
-        public override UInt64 ReadUInt64()
-        {
-            return Utilities.SwapBytes(base.ReadUInt64());
-        }
-
-        public string ReadPascalString()
-        {
-            byte stringLength = base.ReadByte();
-            /*Char[] c = base.ReadChars(stringLength);
-
-			if ((stringLength % 2) == 0) base.ReadByte();
-
-			return new String(c);*/
-            byte[] buf = base.ReadBytes(stringLength);
-            if ((stringLength % 2) == 0) base.ReadByte();
-            return Encoding.Default.GetString(buf);
+            return (long)SwapBytes((ulong)x);
         }
     }
 }

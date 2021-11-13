@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System.IO;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
     /// <summary>
     /// Summary description for Thumbnail.
@@ -55,11 +55,11 @@ namespace System.Drawing.PSD
 
                 if (format == 1)
                 {
-                    byte[] imgData = reverseReader.ReadBytes((Int32)(reverseReader.BaseStream.Length - reverseReader.BaseStream.Position));
+                    byte[] imgData = reverseReader.ReadBytes((int)(reverseReader.BaseStream.Length - reverseReader.BaseStream.Position));
 
                     using (MemoryStream strm = new MemoryStream(imgData))
                     {
-                        Image = (Bitmap)(Drawing.Image.FromStream(strm).Clone());
+                        Image = (Bitmap)Drawing.Image.FromStream(strm).Clone();
                     }
 
                     if (ID == 1033)

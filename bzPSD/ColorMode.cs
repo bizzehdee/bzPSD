@@ -27,7 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
-namespace System.Drawing.PSD
+
+namespace bzPSD
 {
     public enum ColorMode : byte
     {

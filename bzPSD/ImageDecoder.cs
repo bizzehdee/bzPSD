@@ -26,10 +26,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+using System;
+using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.PSD;
 using System.Threading.Tasks;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
     public class ImageDecoder
     {
@@ -79,7 +82,7 @@ namespace System.Drawing.PSD
                         int maskAlpha = GetColor(layer.MaskData, x, y);
                         int oldAlpha = pixelColor.A;
 
-                        int newAlpha = (oldAlpha * maskAlpha) / 255;
+                        int newAlpha = oldAlpha * maskAlpha / 255;
                         pixelColor = Color.FromArgb(newAlpha, pixelColor);
                     }
 
@@ -210,8 +213,8 @@ namespace System.Drawing.PSD
             }
             else
             {
-                x = (x + mask.Layer.Rect.X) - mask.Rect.X;
-                y = (y + mask.Layer.Rect.Y) - mask.Rect.Y;
+                x = x + mask.Layer.Rect.X - mask.Rect.X;
+                y = y + mask.Layer.Rect.Y - mask.Rect.Y;
             }
 
             if (y >= 0 && y < mask.Rect.Height &&
@@ -268,13 +271,13 @@ namespace System.Drawing.PSD
             double varY = y / 100.0;
             double varZ = z / 100.0;
 
-            double varR = varX * 3.2406 + varY * (-1.5372) + varZ * (-0.4986);
-            double varG = varX * (-0.9689) + varY * 1.8758 + varZ * 0.0415;
-            double varB = varX * 0.0557 + varY * (-0.2040) + varZ * 1.0570;
+            double varR = varX * 3.2406 + varY * -1.5372 + varZ * -0.4986;
+            double varG = varX * -0.9689 + varY * 1.8758 + varZ * 0.0415;
+            double varB = varX * 0.0557 + varY * -0.2040 + varZ * 1.0570;
 
-            varR = varR > 0.0031308 ? 1.055 * (Math.Pow(varR, 1 / 2.4)) - 0.055 : 12.92 * varR;
-            varG = varG > 0.0031308 ? 1.055 * (Math.Pow(varG, 1 / 2.4)) - 0.055 : 12.92 * varG;
-            varB = varB > 0.0031308 ? 1.055 * (Math.Pow(varB, 1 / 2.4)) - 0.055 : 12.92 * varB;
+            varR = varR > 0.0031308 ? 1.055 * Math.Pow(varR, 1 / 2.4) - 0.055 : 12.92 * varR;
+            varG = varG > 0.0031308 ? 1.055 * Math.Pow(varG, 1 / 2.4) - 0.055 : 12.92 * varG;
+            varB = varB > 0.0031308 ? 1.055 * Math.Pow(varB, 1 / 2.4) - 0.055 : 12.92 * varB;
 
             int nRed = (int)(varR * 256.0);
             int nGreen = (int)(varG * 256.0);
@@ -314,10 +317,10 @@ namespace System.Drawing.PSD
             double exY = y;
             double exK = k;
 
-            double C = (1.0 - exC / dMaxColours);
-            double M = (1.0 - exM / dMaxColours);
-            double Y = (1.0 - exY / dMaxColours);
-            double K = (1.0 - exK / dMaxColours);
+            double C = 1.0 - exC / dMaxColours;
+            double M = 1.0 - exM / dMaxColours;
+            double Y = 1.0 - exY / dMaxColours;
+            double K = 1.0 - exK / dMaxColours;
 
             int nRed = (int)((1.0 - (C * (1 - K) + K)) * 255);
             int nGreen = (int)((1.0 - (M * (1 - K) + K)) * 255);

@@ -27,13 +27,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.PSD;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
     public class PsdFile
     {
@@ -109,7 +111,7 @@ namespace System.Drawing.PSD
         /// </summary>
         public int Depth
         {
-            get =>_depth;
+            get => _depth;
             private set
             {
                 if (value == 1 || value == 8 || value == 16)
@@ -141,7 +143,7 @@ namespace System.Drawing.PSD
         /// <summary>
         /// The Image resource blocks for the file
         /// </summary>
-        public IEnumerable<ImageResource> ImageResources => _imageResources; 
+        public IEnumerable<ImageResource> ImageResources => _imageResources;
 
         public ResolutionInfo Resolution
         {
@@ -208,10 +210,10 @@ namespace System.Drawing.PSD
             #region "ColorModeData"
             Debug.WriteLine("LoadColorModeData started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
-            UInt32 paletteLength = reader.ReadUInt32(); //readUint32() advances the reader 4 bytes.
+            uint paletteLength = reader.ReadUInt32(); //readUint32() advances the reader 4 bytes.
             if (paletteLength > 0)
             {
-                ColorModeData = reader.ReadBytes((Int32)paletteLength);
+                ColorModeData = reader.ReadBytes((int)paletteLength);
             }
             #endregion //End ColorModeData
 
@@ -223,12 +225,12 @@ namespace System.Drawing.PSD
 
             _imageResources.Clear();
 
-            UInt32 imgResLength = reader.ReadUInt32();
+            uint imgResLength = reader.ReadUInt32();
             if (imgResLength <= 0) return null;
 
-            Int64 startPosition = reader.BaseStream.Position;
+            long startPosition = reader.BaseStream.Position;
 
-            while ((reader.BaseStream.Position - startPosition) < imgResLength)
+            while (reader.BaseStream.Position - startPosition < imgResLength)
             {
                 ImageResource imgRes = new ImageResource(reader);
 
@@ -259,7 +261,7 @@ namespace System.Drawing.PSD
             #region "Layer and Mask Info"
             //We are gonna load up all the layers and masking of the PSD now.
             Debug.WriteLine("LoadLayerAndMaskInfo - Part1 started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
-            UInt32 layersAndMaskLength = reader.ReadUInt32();
+            uint layersAndMaskLength = reader.ReadUInt32();
 
             if (layersAndMaskLength <= 0) return null;
 
@@ -406,7 +408,7 @@ namespace System.Drawing.PSD
 
             if (maskLength <= 0) return;
 
-            _globalLayerMaskData = reader.ReadBytes((Int32)maskLength);
+            _globalLayerMaskData = reader.ReadBytes((int)maskLength);
         }
     }
 }

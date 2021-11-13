@@ -28,9 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
 using System.Collections.Generic;
+using System.Drawing.PSD;
 using System.IO;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
     public sealed class AlphaChannels : ImageResource
     {
@@ -47,7 +48,7 @@ namespace System.Drawing.PSD
             using (BinaryReverseReader reverseReader = imageResource.DataReader)
             {
                 // the names are pascal strings without padding!!!
-                while ((reverseReader.BaseStream.Length - reverseReader.BaseStream.Position) > 0)
+                while (reverseReader.BaseStream.Length - reverseReader.BaseStream.Position > 0)
                 {
                     byte stringLength = reverseReader.ReadByte();
 

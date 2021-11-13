@@ -27,9 +27,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
+using System;
 using System.IO;
 
-namespace System.Drawing.PSD
+namespace bzPSD
 {
 
     /// <summary>
@@ -103,7 +104,7 @@ namespace System.Drawing.PSD
             reverseWriter.Write(Data.Length);
             reverseWriter.Write(Data);
 
-            if (reverseWriter.BaseStream.Position % 2 == 1) reverseWriter.Write((Byte)0);
+            if (reverseWriter.BaseStream.Position % 2 == 1) reverseWriter.Write((byte)0);
         }
 
         protected virtual void StoreData()
@@ -112,7 +113,7 @@ namespace System.Drawing.PSD
         }
 
         public BinaryReverseReader DataReader => new BinaryReverseReader(new MemoryStream(Data));
-        
+
         public override string ToString()
         {
             return string.Format("{0} {1}", (ResourceIDs)ID, Name);

@@ -26,88 +26,63 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
-using System.IO;
 
-namespace System.Drawing.PSD
+using System.IO;
+using System.Text;
+
+namespace bzPSD
 {
     /// <summary>
-    /// Writes primitive data types as binary values in in big-endian format
+    /// Reads primitive data types as binary values in in big-endian format
     /// </summary>
-    public sealed class BinaryReverseWriter : BinaryWriter
+    public sealed class BinaryReverseReader : BinaryReader
     {
-        public bool AutoFlush { get; set; }
-
-        public BinaryReverseWriter(Stream stream)
+        public BinaryReverseReader(Stream stream)
             : base(stream)
         {
-
         }
 
-        public void WritePascalString(string s)
+        public override short ReadInt16()
         {
-            char[] c = s.Length > 255 ? s.Substring(0, 255).ToCharArray() : s.ToCharArray();
-
-            base.Write((byte)c.Length);
-            base.Write(c);
-
-            int realLength = c.Length + 1;
-
-            if ((realLength % 2) == 0) return;
-
-            for (int i = 0; i < (2 - (realLength % 2)); i++)
-            {
-                base.Write((Byte)0);
-            }
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadInt16());
         }
 
-        public override void Write(Int16 val)
+        public override int ReadInt32()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadInt32());
         }
 
-        public override void Write(Int32 val)
+        public override long ReadInt64()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadInt64());
         }
 
-        public override void Write(Int64 val)
+        public override ushort ReadUInt16()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadUInt16());
         }
 
-        public override void Write(UInt16 val)
+        public override uint ReadUInt32()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadUInt32());
         }
 
-        public override void Write(UInt32 val)
+        public override ulong ReadUInt64()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
-
-            if (AutoFlush) Flush();
+            return Utilities.SwapBytes(base.ReadUInt64());
         }
 
-        public override void Write(UInt64 val)
+        public string ReadPascalString()
         {
-            val = Utilities.SwapBytes(val);
-            base.Write(val);
+            byte stringLength = ReadByte();
+            /*Char[] c = base.ReadChars(stringLength);
 
-            if (AutoFlush) Flush();
+			if ((stringLength % 2) == 0) base.ReadByte();
+
+			return new String(c);*/
+            byte[] buf = ReadBytes(stringLength);
+            if (stringLength % 2 == 0) ReadByte();
+            return Encoding.Default.GetString(buf);
         }
     }
 }

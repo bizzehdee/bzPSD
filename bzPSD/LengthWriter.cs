@@ -26,45 +26,49 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
-using System.Diagnostics;
-using System.Globalization;
 
-namespace System.Drawing.PSD
+
+namespace bzPSD
 {
-    public partial class Layer
+    public ref struct LengthWriter
     {
-        public sealed class BlendingRanges
+        private long _lengthPosition;
+        private readonly long _startPosition;
+        private readonly BinaryReverseWriter _reverseWriter;
+
+        public LengthWriter(BinaryReverseWriter writer)
         {
-            public BlendingRanges(Layer layer)
-            {
-                Data = new byte[0];
-                Layer = layer;
-                Layer.BlendingRangesData = this;
-            }
+            _reverseWriter = writer;
 
-            public BlendingRanges(BinaryReverseReader reader, Layer layer)
-            {
-                Data = new byte[0];
-                Debug.WriteLine("BlendingRanges started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+            // we will write the correct length later, so remember 
+            // the position
+            _lengthPosition = _reverseWriter.BaseStream.Position;
+            _reverseWriter.Write(0xFEEDFEED);
 
-                Layer = layer;
-                int dataLength = reader.ReadInt32();
-                if (dataLength <= 0) return;
+            // remember the start  position for calculation Image 
+            // resources length
+            _startPosition = _reverseWriter.BaseStream.Position;
 
-                Data = reader.ReadBytes(dataLength);
-            }
+            _lengthPosition = long.MinValue;
+        }
 
-            public void Save(BinaryReverseWriter writer)
-            {
-                Debug.WriteLine("BlendingRanges Save started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
+        public void Write()
+        {
+            if (_lengthPosition == long.MinValue) return;
 
-                writer.Write((uint)Data.Length);
-                writer.Write(Data);
-            }
+            long endPosition = _reverseWriter.BaseStream.Position;
 
-            public Layer Layer { get; }
+            _reverseWriter.BaseStream.Position = _lengthPosition;
+            long length = endPosition - _startPosition;
+            _reverseWriter.Write((uint)length);
+            _reverseWriter.BaseStream.Position = endPosition;
 
-            public byte[] Data { get; }
+            _lengthPosition = long.MinValue;
+        }
+
+        public void Dispose()
+        {
+            Write();
         }
     }
 }
