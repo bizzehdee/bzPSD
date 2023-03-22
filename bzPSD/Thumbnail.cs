@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 
 namespace bzPSD
@@ -59,7 +61,7 @@ namespace bzPSD
 
                     using (MemoryStream strm = new MemoryStream(imgData))
                     {
-                        Image = (Bitmap)Drawing.Image.FromStream(strm).Clone();
+                        Image = (Bitmap)System.Drawing.Image.FromStream(strm).Clone();
                     }
 
                     if (ID == 1033)
@@ -77,7 +79,7 @@ namespace bzPSD
                 }
                 else
                 {
-                    Image = new Bitmap(width, height, Imaging.PixelFormat.Format24bppRgb);
+                    Image = new Bitmap(width, height, PixelFormat.Format24bppRgb);
                 }
             }
         }

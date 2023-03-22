@@ -43,6 +43,7 @@ namespace System.Drawing.PSD
 
         public Layer(PsdFile psdFile)
         {
+            SortedChannels = new SortedList<short, Channel>();
             AdjustmentInfo = new List<AdjusmentLayerInfo>();
             Channels = new List<Channel>();
             Rect = Rectangle.Empty;
@@ -51,6 +52,7 @@ namespace System.Drawing.PSD
 
         public Layer(BinaryReverseReader reverseReader, PsdFile psdFile)
         {
+            SortedChannels = new SortedList<short, Channel>();
             AdjustmentInfo = new List<AdjusmentLayerInfo>();
             Channels = new List<Channel>();
             Debug.WriteLine("Layer started at " + reverseReader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
