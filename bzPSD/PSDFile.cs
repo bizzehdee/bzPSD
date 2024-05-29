@@ -163,7 +163,7 @@ namespace bzPSD
 
         public PsdFile Load(string filename)
         {
-            using (FileStream stream = new FileStream(filename, FileMode.Open))
+            using (FileStream stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
             {
                 return Load(stream);
             }
