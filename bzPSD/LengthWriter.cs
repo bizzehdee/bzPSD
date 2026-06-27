@@ -45,11 +45,9 @@ namespace bzPSD
             _lengthPosition = _reverseWriter.BaseStream.Position;
             _reverseWriter.Write(0xFEEDFEED);
 
-            // remember the start  position for calculation Image 
+            // remember the start  position for calculation Image
             // resources length
             _startPosition = _reverseWriter.BaseStream.Position;
-
-            _lengthPosition = long.MinValue;
         }
 
         public void Write()
