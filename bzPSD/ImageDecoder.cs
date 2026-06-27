@@ -98,25 +98,22 @@ namespace bzPSD
 
         public static Bitmap DecodeImage(Layer.Mask mask)
         {
-            Layer layer = mask.Layer;
-
             if (mask.Rect.Width == 0 || mask.Rect.Height == 0) return null;
 
             Bitmap bitmap = new Bitmap(mask.Rect.Width, mask.Rect.Height, PixelFormat.Format32bppArgb);
 
-            Parallel.For(0, layer.Rect.Height, y =>
+            Parallel.For(0, mask.Rect.Height, y =>
             {
-                int rowIndex = y * layer.Rect.Width;
+                int rowIndex = y * mask.Rect.Width;
 
-                for (int x = 0; x < layer.Rect.Width; x++)
+                for (int x = 0; x < mask.Rect.Width; x++)
                 {
                     int pos = rowIndex + x;
-
-                    Color pixelColor = Color.FromArgb(mask.ImageData[pos], mask.ImageData[pos], mask.ImageData[pos]);
+                    byte v = pos < mask.ImageData.Length ? mask.ImageData[pos] : (byte)0;
 
                     lock (bitmap)
                     {
-                        bitmap.SetPixel(x, y, pixelColor);
+                        bitmap.SetPixel(x, y, Color.FromArgb(v, v, v));
                     }
                 }
             });
