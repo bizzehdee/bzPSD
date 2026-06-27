@@ -82,7 +82,7 @@ namespace bzPSD
 			return new String(c);*/
             byte[] buf = ReadBytes(stringLength);
             if (stringLength % 2 == 0) ReadByte();
-            return Encoding.Default.GetString(buf);
+            return Encoding.GetEncoding(28591).GetString(buf);
         }
     }
 }

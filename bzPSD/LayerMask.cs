@@ -81,12 +81,14 @@ namespace System.Drawing.PSD
 
                     byte realUserMaskBackground = reader.ReadByte();
 
+                    int top = reader.ReadInt32();
+                    int left = reader.ReadInt32();
                     var rect = new Rectangle
                     {
-                        Y = reader.ReadInt32(),
-                        X = reader.ReadInt32(),
-                        Height = reader.ReadInt32() - Rect.Y,
-                        Width = reader.ReadInt32() - Rect.X
+                        Y = top,
+                        X = left,
+                        Height = reader.ReadInt32() - top,
+                        Width = reader.ReadInt32() - left
                     };
                 }
 
@@ -194,13 +196,6 @@ namespace System.Drawing.PSD
                     }
 
                     maskChannel.ImageData = new byte[Rect.Height * bytesPerRow];
-                    // Fill Array
-                    for (int i = 0; i < maskChannel.ImageData.Length; i++)
-                    {
-                        maskChannel.ImageData[i] = 0xAB;
-                    }
-
-                    ImageData = (byte[])maskChannel.ImageData.Clone();
 
                     switch (maskChannel.ImageCompression)
                     {

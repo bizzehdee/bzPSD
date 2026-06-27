@@ -171,8 +171,7 @@ namespace bzPSD
 
         public PsdFile Load(byte[] data)
         {
-            var stream = new MemoryStream(data);
-
+            using var stream = new MemoryStream(data);
             return Load(stream);
         }
 
@@ -226,7 +225,7 @@ namespace bzPSD
             _imageResources.Clear();
 
             uint imgResLength = reader.ReadUInt32();
-            if (imgResLength <= 0) return null;
+            if (imgResLength <= 0) return this;
 
             long startPosition = reader.BaseStream.Position;
 
@@ -263,7 +262,7 @@ namespace bzPSD
             Debug.WriteLine("LoadLayerAndMaskInfo - Part1 started at " + reader.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
             uint layersAndMaskLength = reader.ReadUInt32();
 
-            if (layersAndMaskLength <= 0) return null;
+            if (layersAndMaskLength <= 0) return this;
 
             //new start position
             startPosition = reader.BaseStream.Position;

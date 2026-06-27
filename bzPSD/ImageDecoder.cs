@@ -126,43 +126,33 @@ namespace bzPSD
 
         private static Color GetColor(PsdFile psdFile, int pos)
         {
-            var c = Color.White;
-
-            byte red = psdFile.ImageData[0][pos];
-            byte green = psdFile.ImageData[1][pos];
-            byte blue = psdFile.ImageData[2][pos];
-
-            byte alpha = 255;
-            if (psdFile.ImageData.Length > 3)
-            {
-                alpha = psdFile.ImageData[3][pos];
-            }
-
             switch (psdFile.ColorMode)
             {
                 case ColorMode.RGB:
-                    c = Color.FromArgb(alpha, red, green, blue);
-                    break;
+                {
+                    byte a = psdFile.ImageData.Length > 3 ? psdFile.ImageData[3][pos] : (byte)255;
+                    return Color.FromArgb(a, psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+                }
                 case ColorMode.CMYK:
-                    c = CMYKToRGB(red, green, blue, alpha);
-                    break;
+                    return CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], psdFile.ImageData[3][pos]);
                 case ColorMode.Multichannel:
-                    c = CMYKToRGB(red, green, blue, 0);
-                    break;
+                    return CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], 0);
                 case ColorMode.Grayscale:
                 case ColorMode.Duotone:
-                    c = Color.FromArgb(red, red, red);
-                    break;
+                {
+                    byte v = psdFile.ImageData[0][pos];
+                    return Color.FromArgb(v, v, v);
+                }
                 case ColorMode.Indexed:
-                    int index = red;
-                    c = Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
-                    break;
+                {
+                    int index = psdFile.ImageData[0][pos];
+                    return Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
+                }
                 case ColorMode.Lab:
-                    c = LabToRGB(red, green, blue);
-                    break;
+                    return LabToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+                default:
+                    return Color.White;
             }
-
-            return c;
         }
 
         private static Color GetColor(Layer layer, int pos)
@@ -252,9 +242,9 @@ namespace bzPSD
             double varX = a / 500.0 + varY;
             double varZ = varY - b / 200.0;
 
-            varY = Math.Pow(varY, 3) > 0.008856 ? Math.Pow(varY, 3) : (varY - 16 / 116) / 7.787;
-            varX = Math.Pow(varX, 3) > 0.008856 ? Math.Pow(varX, 3) : (varX - 16 / 116) / 7.787;
-            varZ = Math.Pow(varZ, 3) > 0.008856 ? Math.Pow(varZ, 3) : (varZ - 16 / 116) / 7.787;
+            varY = Math.Pow(varY, 3) > 0.008856 ? Math.Pow(varY, 3) : (varY - 16.0 / 116.0) / 7.787;
+            varX = Math.Pow(varX, 3) > 0.008856 ? Math.Pow(varX, 3) : (varX - 16.0 / 116.0) / 7.787;
+            varZ = Math.Pow(varZ, 3) > 0.008856 ? Math.Pow(varZ, 3) : (varZ - 16.0 / 116.0) / 7.787;
 
             double x = refX * varX;
             double y = refY * varY;
