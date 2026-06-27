@@ -40,23 +40,34 @@ namespace bzPSD
         {
             var bitmap = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
 
-            //Parallel load each row
+            if (psdFile.ColorMode == ColorMode.Multichannel)
+            {
+                Color[] inkColors = GetMultichannelInkColors(psdFile.DisplayInfo, psdFile.Channels, offset: 0);
+                int ch = psdFile.Channels, d = psdFile.Depth;
+
+                Parallel.For(0, psdFile.Rows, y =>
+                {
+                    int rowIndex = y * psdFile.Columns;
+                    for (int x = 0; x < psdFile.Columns; x++)
+                    {
+                        int pos = rowIndex + x;
+                        lock (bitmap)
+                            bitmap.SetPixel(x, y, CompositeInkChannels(psdFile.ImageData, ch, d, inkColors, pos));
+                    }
+                });
+                return bitmap;
+            }
+
             Parallel.For(0, psdFile.Rows, y =>
-                                          {
-                                              int rowIndex = y * psdFile.Columns;
-
-                                              for (int x = 0; x < psdFile.Columns; x++)
-                                              {
-                                                  int pos = rowIndex + x;
-
-                                                  Color pixelColor = GetColor(psdFile, pos);
-
-                                                  lock (bitmap)
-                                                  {
-                                                      bitmap.SetPixel(x, y, pixelColor);
-                                                  }
-                                              }
-                                          });
+            {
+                int rowIndex = y * psdFile.Columns;
+                for (int x = 0; x < psdFile.Columns; x++)
+                {
+                    int pos = rowIndex + x;
+                    lock (bitmap)
+                        bitmap.SetPixel(x, y, GetColor(psdFile, pos));
+                }
+            });
 
             return bitmap;
         }
@@ -66,6 +77,32 @@ namespace bzPSD
             if (layer.Rect.Width == 0 || layer.Rect.Height == 0) return null;
 
             var bitmap = new Bitmap(layer.Rect.Width, layer.Rect.Height, PixelFormat.Format32bppArgb);
+
+            if (layer.PsdFile.ColorMode == ColorMode.Multichannel)
+            {
+                int channelCount = layer.PsdFile.Channels;
+                // For non-Multichannel files DisplayInfo has a composite entry at [0]; for
+                // Multichannel it does not, so channel i maps directly to DisplayInfo.Channels[i].
+                Color[] inkColors = GetMultichannelInkColors(layer.PsdFile.DisplayInfo, channelCount, offset: 0);
+                int d = layer.PsdFile.Depth;
+
+                Parallel.For(0, layer.Rect.Height, y =>
+                {
+                    int rowIndex = y * layer.Rect.Width;
+                    for (int x = 0; x < layer.Rect.Width; x++)
+                    {
+                        int pos = rowIndex + x;
+                        // Build a temporary per-channel data view from SortedChannels
+                        byte[][] chData = new byte[channelCount][];
+                        for (int i = 0; i < channelCount; i++)
+                            chData[i] = layer.SortedChannels.ContainsKey((short)i) ? layer.SortedChannels[(short)i].ImageData : null;
+
+                        lock (bitmap)
+                            bitmap.SetPixel(x, y, CompositeInkChannels(chData, channelCount, d, inkColors, pos));
+                    }
+                });
+                return bitmap;
+            }
 
             Parallel.For(0, layer.Rect.Height, y =>
             {
@@ -241,7 +278,9 @@ namespace bzPSD
                 case ColorMode.CMYK:
                     return CMYKToRGB(Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d), Ch(psdFile.ImageData[3], pos, d));
                 case ColorMode.Multichannel:
-                    return CMYKToRGB(Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d), 0);
+                    // Reached only if called directly; DecodeImage(PsdFile) routes multichannel separately.
+                    return CompositeInkChannels(psdFile.ImageData, psdFile.Channels, d,
+                        GetMultichannelInkColors(psdFile.DisplayInfo, psdFile.Channels, 0), pos);
                 case ColorMode.Grayscale:
                 case ColorMode.Duotone:
                 {
@@ -274,8 +313,16 @@ namespace bzPSD
                     c = CMYKToRGB(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d), Ch(layer.SortedChannels[3].ImageData, pos, d));
                     break;
                 case ColorMode.Multichannel:
-                    c = CMYKToRGB(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d), 0);
-                    break;
+                    // Reached only if called directly; DecodeImage(Layer) routes multichannel separately.
+                    {
+                        int chCount = layer.PsdFile.Channels;
+                        byte[][] chData = new byte[chCount][];
+                        for (int i = 0; i < chCount; i++)
+                            chData[i] = layer.SortedChannels.ContainsKey((short)i) ? layer.SortedChannels[(short)i].ImageData : null;
+                        c = CompositeInkChannels(chData, chCount, d,
+                            GetMultichannelInkColors(layer.PsdFile.DisplayInfo, chCount, 0), pos);
+                        break;
+                    }
                 case ColorMode.Grayscale:
                 case ColorMode.Duotone:
                 {
@@ -323,6 +370,74 @@ namespace bzPSD
             }
 
             return c;
+        }
+
+        /// <summary>
+        /// Returns one display RGB colour per ink channel.
+        /// For Multichannel files DisplayInfo has no composite entry, so <paramref name="offset"/> is 0.
+        /// For RGB/CMYK files the composite is at index 0 and colour channels start at offset 1.
+        /// Falls back to process-colour defaults (C/M/Y/K/black) when DisplayInfo is absent.
+        /// </summary>
+        private static Color[] GetMultichannelInkColors(DisplayInfo di, int channelCount, int offset)
+        {
+            var colors = new Color[channelCount];
+            for (int i = 0; i < channelCount; i++)
+            {
+                int diIndex = i + offset;
+                if (di != null && diIndex < di.Channels.Count)
+                    colors[i] = InkColorToRGB(di.Channels[diIndex]);
+                else
+                    colors[i] = i switch { 0 => Color.Cyan, 1 => Color.Magenta, 2 => Color.Yellow, 3 => Color.Black, _ => Color.Black };
+            }
+            return colors;
+        }
+
+        /// <summary>
+        /// Converts a <see cref="ChannelDisplayInfo"/> colour to a display RGB value.
+        /// The result represents what the ink looks like at 100 % coverage on white paper.
+        /// </summary>
+        private static Color InkColorToRGB(ChannelDisplayInfo ch)
+        {
+            switch (ch.ColorSpace)
+            {
+                case ChannelColorSpace.RGB:
+                    return Color.FromArgb(
+                        ch.ColorComponents[0] * 255 / 65535,
+                        ch.ColorComponents[1] * 255 / 65535,
+                        ch.ColorComponents[2] * 255 / 65535);
+                case ChannelColorSpace.CMYK:
+                    // DisplayInfo CMYK components are 0-10000 (= 0-100 %).
+                    // CMYKToRGB expects the PSD inverted convention (0 = full ink, 255 = no ink).
+                    return CMYKToRGB(
+                        (byte)(255 - ch.ColorComponents[0] * 255 / 10000),
+                        (byte)(255 - ch.ColorComponents[1] * 255 / 10000),
+                        (byte)(255 - ch.ColorComponents[2] * 255 / 10000),
+                        (byte)(255 - ch.ColorComponents[3] * 255 / 10000));
+                case ChannelColorSpace.Grayscale:
+                    // 0 = white (no ink), 10000 = black (full ink).
+                    byte v = (byte)(255 - ch.ColorComponents[0] * 255 / 10000);
+                    return Color.FromArgb(v, v, v);
+                default:
+                    return Color.Black;
+            }
+        }
+
+        /// <summary>
+        /// Composites <paramref name="channelCount"/> ink channels onto white paper using
+        /// multiplicative (subtractive) blending — equivalent to Photoshop's channel-preview mode.
+        /// </summary>
+        private static Color CompositeInkChannels(byte[][] channelData, int channelCount, int depth, Color[] inkColors, int pos)
+        {
+            double r = 1.0, g = 1.0, b = 1.0;
+            for (int i = 0; i < channelCount; i++)
+            {
+                if (channelData[i] == null) continue;
+                double coverage = Ch(channelData[i], pos, depth) / 255.0;
+                r *= 1.0 - coverage * (1.0 - inkColors[i].R / 255.0);
+                g *= 1.0 - coverage * (1.0 - inkColors[i].G / 255.0);
+                b *= 1.0 - coverage * (1.0 - inkColors[i].B / 255.0);
+            }
+            return Color.FromArgb(255, Clamp((int)(r * 255)), Clamp((int)(g * 255)), Clamp((int)(b * 255)));
         }
 
         private static Color LabToRGB(byte lb, byte ab, byte bb)

@@ -100,6 +100,9 @@ psd.Save("red.psd");
 | `Layers` | `IEnumerable<Layer>` — ordered bottom-to-top. |
 | `ImageResources` | `IEnumerable<ImageResource>` — metadata blocks. |
 | `Resolution` | `ResolutionInfo` resource (DPI, units). |
+| `DisplayInfo` | Per-channel display info (resource 1007): colour space, ink colour, opacity, kind. |
+| `AlphaChannelNames` | ASCII extra-channel names (resource 1006). |
+| `UnicodeAlphaNames` | Unicode extra-channel names (resource 1045, preferred over `AlphaChannelNames`). |
 | `AddLayer(Layer)` | Append a layer to the stack. |
 | `RemoveLayer(Layer)` | Remove a layer from the stack. |
 
@@ -138,7 +141,7 @@ Supported blend modes: Normal, Multiply, Screen, Overlay, Hard Light, Soft Light
 | `Grayscale` / `Duotone` | 1 | Rendered as grey. |
 | `Lab` | 3 | Converted to RGB on decode. |
 | `Indexed` | 1 | Palette resolved via `ColorModeData`. |
-| `Multichannel` | 3 | Treated as CMY (no K). |
+| `Multichannel` | all channels | Each ink composited subtractively on white using `DisplayInfo` (resource 1007) colours. Falls back to C/M/Y/K if `DisplayInfo` is absent. |
 
 ### Bit depth
 
