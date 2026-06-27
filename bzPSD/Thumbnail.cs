@@ -1,4 +1,4 @@
-﻿#region Licence
+#region Licence
 /*
 Copyright (c) 2013, Darren Horrocks
 All rights reserved.
@@ -27,60 +27,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 
 namespace bzPSD
 {
     /// <summary>
-    /// Summary description for Thumbnail.
+    /// Parsed image resource 1036 or 1033 — the embedded JPEG thumbnail.
     /// </summary>
     public sealed class Thumbnail : ImageResource
     {
-        public Bitmap Image { get; private set; }
+        /// <summary>
+        /// Thumbnail width in pixels (from the resource header).
+        /// </summary>
+        public int Width { get; }
+
+        /// <summary>
+        /// Thumbnail height in pixels (from the resource header).
+        /// </summary>
+        public int Height { get; }
+
+        /// <summary>
+        /// Raw JPEG bytes when the thumbnail is stored in JPEG format (format code 1).
+        /// Pass directly to a JPEG decoder of your choice (e.g. <c>SixLabors.ImageSharp</c>,
+        /// <c>SkiaSharp</c>, or <c>System.Drawing</c> on Windows).
+        /// Null when the thumbnail uses the raw-pixel format.
+        /// </summary>
+        public byte[] JpegData { get; }
 
         public Thumbnail(ImageResource imageResource)
             : base(imageResource)
         {
-            using (BinaryReverseReader reverseReader = DataReader)
+            using (BinaryReverseReader reader = DataReader)
             {
-                int format = reverseReader.ReadInt32();
-                int width = reverseReader.ReadInt32();
-                int height = reverseReader.ReadInt32();
-
-                reverseReader.ReadInt32(); // read widthBytes
-                reverseReader.ReadInt32(); // read size
-                reverseReader.ReadInt32(); // read compressedSize
-                reverseReader.ReadInt16(); // read bitPerPixel
-                reverseReader.ReadInt16(); // read planes
+                int format           = reader.ReadInt32();
+                Width                = reader.ReadInt32();
+                Height               = reader.ReadInt32();
+                reader.ReadInt32();  // widthBytes (stride)
+                reader.ReadInt32();  // uncompressed size
+                reader.ReadInt32();  // compressed size
+                reader.ReadInt16();  // bits per pixel
+                reader.ReadInt16();  // planes
 
                 if (format == 1)
                 {
-                    byte[] imgData = reverseReader.ReadBytes((int)(reverseReader.BaseStream.Length - reverseReader.BaseStream.Position));
-
-                    using (MemoryStream strm = new MemoryStream(imgData))
-                    {
-                        Image = (Bitmap)System.Drawing.Image.FromStream(strm).Clone();
-                    }
-
-                    if (ID == 1033)
-                    {
-                        //// BGR
-                        //for(int y=0;y<m_thumbnailImage.Height;y++)
-                        //  for (int x = 0; x < m_thumbnailImage.Width; x++)
-                        //  {
-                        //    Color c=m_thumbnailImage.GetPixel(x,y);
-                        //    Color c2=Color.FromArgb(c.B, c.G, c.R);
-                        //    m_thumbnailImage.SetPixel(x, y, c);
-                        //  }
-                    }
-
+                    JpegData = reader.ReadBytes(
+                        (int)(reader.BaseStream.Length - reader.BaseStream.Position));
                 }
-                else
-                {
-                    Image = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-                }
+                // format != 1 is an undocumented raw-pixel variant; pixel data is not
+                // parsed here since the format has no public specification.
             }
         }
     }

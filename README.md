@@ -9,7 +9,7 @@ Add the project reference directly, or copy the source into your solution. A NuG
 ## Requirements
 
 - .NET Standard 2.1 or later (.NET 5+, .NET Core 3.x)
-- `System.Drawing.Common` 5.0.3+
+- No native dependencies — fully cross-platform
 
 ## Quick start
 
@@ -17,14 +17,15 @@ Add the project reference directly, or copy the source into your solution. A NuG
 
 ```csharp
 var psd = new PsdFile().Load("photo.psd");
-Bitmap merged = ImageDecoder.DecodeImage(psd);
+PsdBitmap merged = ImageDecoder.DecodeImage(psd);
+// merged.Pixels is a byte[] in RGBA order, 4 bytes per pixel
 ```
 
 ### Composite layers (respects blend modes and opacity)
 
 ```csharp
 var psd = new PsdFile().Load("layered.psd");
-Bitmap composited = ImageDecoder.CompositeLayers(psd);
+PsdBitmap composited = ImageDecoder.CompositeLayers(psd);
 ```
 
 ### Decode a single layer
@@ -34,9 +35,25 @@ var psd = new PsdFile().Load("layered.psd");
 foreach (Layer layer in psd.Layers)
 {
     if (!layer.Visible) continue;
-    Bitmap bmp = ImageDecoder.DecodeImage(layer);   // null if layer is empty
+    PsdBitmap bmp = ImageDecoder.DecodeImage(layer);   // null if layer is empty
     // bmp is sized to layer.Rect, positioned at layer.Rect.X / .Y
 }
+```
+
+### Converting PsdBitmap to a third-party type
+
+```csharp
+// SkiaSharp
+var skBmp = new SKBitmap(bmp.Width, bmp.Height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+System.Runtime.InteropServices.Marshal.Copy(bmp.Pixels, 0, skBmp.GetPixels(), bmp.Pixels.Length);
+
+// SixLabors ImageSharp
+var img = Image.LoadPixelData<Rgba32>(bmp.Pixels, bmp.Width, bmp.Height);
+
+// System.Drawing (Windows only)
+var sysBmp = new System.Drawing.Bitmap(bmp.Width, bmp.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+var bmpData = sysBmp.LockBits(..., System.Drawing.Imaging.ImageLockMode.WriteOnly, ...);
+// note: System.Drawing.Bitmap expects BGRA; swap R and B channels before copying
 ```
 
 ### Load from a byte array or stream
@@ -105,6 +122,15 @@ psd.Save("red.psd");
 | `UnicodeAlphaNames` | Unicode extra-channel names (resource 1045, preferred over `AlphaChannelNames`). |
 | `AddLayer(Layer)` | Append a layer to the stack. |
 | `RemoveLayer(Layer)` | Remove a layer from the stack. |
+
+### `PsdBitmap`
+
+| Member | Description |
+|--------|-------------|
+| `Width`, `Height` | Dimensions in pixels. |
+| `Pixels` | `byte[]` in RGBA order, 4 bytes per pixel, row-major. Pixel at (x,y): index `(y*Width+x)*4`. |
+| `GetPixel(x, y)` | Returns `System.Drawing.Color` for that pixel. |
+| `SetPixel(x, y, color)` | Writes `System.Drawing.Color` to that pixel. |
 
 ### `ImageDecoder`
 
@@ -179,7 +205,7 @@ psd.Save("output.psd");
 - PSD only (version 1). PSB (large document, version 2) is not supported.
 - Writing layer pixel data round-trips correctly only when `ImageData` on each channel has been populated. Newly constructed layers need their channel `ImageData` set before saving.
 - `Dissolve` blend mode is not implemented (falls back to Normal).
-- `System.Drawing.Common` is a Windows-native GDI+ wrapper on non-Windows platforms and may require additional runtime configuration.
+- `Thumbnail.JpegData` exposes raw JPEG bytes; callers must supply their own JPEG decoder (SkiaSharp, ImageSharp, System.Drawing on Windows, etc.).
 
 ## License
 

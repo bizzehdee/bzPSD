@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 using System;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Drawing.PSD;
 using System.Threading.Tasks;
 
@@ -36,9 +35,9 @@ namespace bzPSD
 {
     public class ImageDecoder
     {
-        public static Bitmap DecodeImage(PsdFile psdFile)
+        public static PsdBitmap DecodeImage(PsdFile psdFile)
         {
-            var bitmap = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
+            var bitmap = new PsdBitmap(psdFile.Columns, psdFile.Rows);
 
             if (psdFile.ColorMode == ColorMode.Multichannel)
             {
@@ -51,8 +50,7 @@ namespace bzPSD
                     for (int x = 0; x < psdFile.Columns; x++)
                     {
                         int pos = rowIndex + x;
-                        lock (bitmap)
-                            bitmap.SetPixel(x, y, CompositeInkChannels(psdFile.ImageData, ch, d, inkColors, pos));
+                        bitmap.SetPixel(x, y, CompositeInkChannels(psdFile.ImageData, ch, d, inkColors, pos));
                     }
                 });
                 return bitmap;
@@ -64,19 +62,18 @@ namespace bzPSD
                 for (int x = 0; x < psdFile.Columns; x++)
                 {
                     int pos = rowIndex + x;
-                    lock (bitmap)
-                        bitmap.SetPixel(x, y, GetColor(psdFile, pos));
+                    bitmap.SetPixel(x, y, GetColor(psdFile, pos));
                 }
             });
 
             return bitmap;
         }
 
-        public static Bitmap DecodeImage(Layer layer)
+        public static PsdBitmap DecodeImage(Layer layer)
         {
             if (layer.Rect.Width == 0 || layer.Rect.Height == 0) return null;
 
-            var bitmap = new Bitmap(layer.Rect.Width, layer.Rect.Height, PixelFormat.Format32bppArgb);
+            var bitmap = new PsdBitmap(layer.Rect.Width, layer.Rect.Height);
 
             if (layer.PsdFile.ColorMode == ColorMode.Multichannel)
             {
@@ -89,16 +86,15 @@ namespace bzPSD
                 Parallel.For(0, layer.Rect.Height, y =>
                 {
                     int rowIndex = y * layer.Rect.Width;
+                    // Build the per-channel view once per row, not per pixel.
+                    byte[][] chData = new byte[channelCount][];
+                    for (int i = 0; i < channelCount; i++)
+                        chData[i] = layer.SortedChannels.ContainsKey((short)i) ? layer.SortedChannels[(short)i].ImageData : null;
+
                     for (int x = 0; x < layer.Rect.Width; x++)
                     {
                         int pos = rowIndex + x;
-                        // Build a temporary per-channel data view from SortedChannels
-                        byte[][] chData = new byte[channelCount][];
-                        for (int i = 0; i < channelCount; i++)
-                            chData[i] = layer.SortedChannels.ContainsKey((short)i) ? layer.SortedChannels[(short)i].ImageData : null;
-
-                        lock (bitmap)
-                            bitmap.SetPixel(x, y, CompositeInkChannels(chData, channelCount, d, inkColors, pos));
+                        bitmap.SetPixel(x, y, CompositeInkChannels(chData, channelCount, d, inkColors, pos));
                     }
                 });
                 return bitmap;
@@ -117,16 +113,11 @@ namespace bzPSD
                     if (layer.SortedChannels.ContainsKey(-2))
                     {
                         int maskAlpha = GetColor(layer.MaskData, x, y);
-                        int oldAlpha = pixelColor.A;
-
-                        int newAlpha = oldAlpha * maskAlpha / 255;
+                        int newAlpha = pixelColor.A * maskAlpha / 255;
                         pixelColor = Color.FromArgb(newAlpha, pixelColor);
                     }
 
-                    lock (bitmap)
-                    {
-                        bitmap.SetPixel(x, y, pixelColor);
-                    }
+                    bitmap.SetPixel(x, y, pixelColor);
                 }
             });
 
@@ -136,11 +127,10 @@ namespace bzPSD
         /// <summary>
         /// Composites all visible layers bottom-to-top using each layer's blend mode and opacity.
         /// </summary>
-        public static Bitmap CompositeLayers(PsdFile psdFile)
+        public static PsdBitmap CompositeLayers(PsdFile psdFile)
         {
-            var result = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
-            using (var g = Graphics.FromImage(result))
-                g.Clear(Color.Transparent);
+            // PsdBitmap initialises all pixels to transparent black (all bytes zero).
+            var result = new PsdBitmap(psdFile.Columns, psdFile.Rows);
 
             foreach (var layer in psdFile.Layers)
             {
@@ -155,7 +145,7 @@ namespace bzPSD
             return result;
         }
 
-        private static void CompositeLayer(Bitmap dst, Bitmap src, Layer layer)
+        private static void CompositeLayer(PsdBitmap dst, PsdBitmap src, Layer layer)
         {
             int ox = layer.Rect.X, oy = layer.Rect.Y;
 
@@ -236,11 +226,11 @@ namespace bzPSD
                 Clamp((blended.B * effA + dst.B * dstWeight) / outA));
         }
 
-        public static Bitmap DecodeImage(Layer.Mask mask)
+        public static PsdBitmap DecodeImage(Layer.Mask mask)
         {
             if (mask.Rect.Width == 0 || mask.Rect.Height == 0) return null;
 
-            Bitmap bitmap = new Bitmap(mask.Rect.Width, mask.Rect.Height, PixelFormat.Format32bppArgb);
+            var bitmap = new PsdBitmap(mask.Rect.Width, mask.Rect.Height);
 
             Parallel.For(0, mask.Rect.Height, y =>
             {
@@ -250,11 +240,7 @@ namespace bzPSD
                 {
                     int pos = rowIndex + x;
                     byte v = pos < mask.ImageData.Length ? mask.ImageData[pos] : (byte)0;
-
-                    lock (bitmap)
-                    {
-                        bitmap.SetPixel(x, y, Color.FromArgb(v, v, v));
-                    }
+                    bitmap.SetPixel(x, y, Color.FromArgb(v, v, v));
                 }
             });
 
