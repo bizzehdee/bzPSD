@@ -121,32 +121,37 @@ namespace bzPSD
             return bitmap;
         }
 
+        // For 16-bit channels ImageData holds two bytes per pixel (big-endian); take the high byte for display.
+        private static byte Ch(byte[] data, int pixelPos, int depth)
+            => depth == 16 ? data[pixelPos * 2] : data[pixelPos];
+
         private static Color GetColor(PsdFile psdFile, int pos)
         {
+            int d = psdFile.Depth;
             switch (psdFile.ColorMode)
             {
                 case ColorMode.RGB:
                 {
-                    byte a = psdFile.ImageData.Length > 3 ? psdFile.ImageData[3][pos] : (byte)255;
-                    return Color.FromArgb(a, psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+                    byte a = psdFile.ImageData.Length > 3 ? Ch(psdFile.ImageData[3], pos, d) : (byte)255;
+                    return Color.FromArgb(a, Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d));
                 }
                 case ColorMode.CMYK:
-                    return CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], psdFile.ImageData[3][pos]);
+                    return CMYKToRGB(Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d), Ch(psdFile.ImageData[3], pos, d));
                 case ColorMode.Multichannel:
-                    return CMYKToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos], 0);
+                    return CMYKToRGB(Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d), 0);
                 case ColorMode.Grayscale:
                 case ColorMode.Duotone:
                 {
-                    byte v = psdFile.ImageData[0][pos];
+                    byte v = Ch(psdFile.ImageData[0], pos, d);
                     return Color.FromArgb(v, v, v);
                 }
                 case ColorMode.Indexed:
                 {
-                    int index = psdFile.ImageData[0][pos];
+                    int index = Ch(psdFile.ImageData[0], pos, d);
                     return Color.FromArgb(psdFile.ColorModeData[index], psdFile.ColorModeData[index + 256], psdFile.ColorModeData[index + 2 * 256]);
                 }
                 case ColorMode.Lab:
-                    return LabToRGB(psdFile.ImageData[0][pos], psdFile.ImageData[1][pos], psdFile.ImageData[2][pos]);
+                    return LabToRGB(Ch(psdFile.ImageData[0], pos, d), Ch(psdFile.ImageData[1], pos, d), Ch(psdFile.ImageData[2], pos, d));
                 default:
                     return Color.White;
             }
@@ -154,37 +159,40 @@ namespace bzPSD
 
         private static Color GetColor(Layer layer, int pos)
         {
+            int d = layer.PsdFile.Depth;
             Color c = Color.White;
 
             switch (layer.PsdFile.ColorMode)
             {
                 case ColorMode.RGB:
-                    c = Color.FromArgb(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos]);
+                    c = Color.FromArgb(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d));
                     break;
                 case ColorMode.CMYK:
-                    c = CMYKToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos], layer.SortedChannels[3].ImageData[pos]);
+                    c = CMYKToRGB(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d), Ch(layer.SortedChannels[3].ImageData, pos, d));
                     break;
                 case ColorMode.Multichannel:
-                    c = CMYKToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos], 0);
+                    c = CMYKToRGB(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d), 0);
                     break;
                 case ColorMode.Grayscale:
                 case ColorMode.Duotone:
-                    c = Color.FromArgb(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[0].ImageData[pos]);
+                {
+                    byte v = Ch(layer.SortedChannels[0].ImageData, pos, d);
+                    c = Color.FromArgb(v, v, v);
                     break;
+                }
                 case ColorMode.Indexed:
-                    {
-                        int index = layer.SortedChannels[0].ImageData[pos];
-                        c = Color.FromArgb(layer.PsdFile.ColorModeData[index], layer.PsdFile.ColorModeData[index + 256], layer.PsdFile.ColorModeData[index + 2 * 256]);
-                    }
+                {
+                    int index = Ch(layer.SortedChannels[0].ImageData, pos, d);
+                    c = Color.FromArgb(layer.PsdFile.ColorModeData[index], layer.PsdFile.ColorModeData[index + 256], layer.PsdFile.ColorModeData[index + 2 * 256]);
                     break;
+                }
                 case ColorMode.Lab:
-                    {
-                        c = LabToRGB(layer.SortedChannels[0].ImageData[pos], layer.SortedChannels[1].ImageData[pos], layer.SortedChannels[2].ImageData[pos]);
-                    }
+                    c = LabToRGB(Ch(layer.SortedChannels[0].ImageData, pos, d), Ch(layer.SortedChannels[1].ImageData, pos, d), Ch(layer.SortedChannels[2].ImageData, pos, d));
                     break;
             }
 
-            if (layer.SortedChannels.ContainsKey(-1)) c = Color.FromArgb(layer.SortedChannels[-1].ImageData[pos], c);
+            if (layer.SortedChannels.ContainsKey(-1))
+                c = Color.FromArgb(Ch(layer.SortedChannels[-1].ImageData, pos, d), c);
 
             return c;
         }
