@@ -96,6 +96,109 @@ namespace bzPSD
             return bitmap;
         }
 
+        /// <summary>
+        /// Composites all visible layers bottom-to-top using each layer's blend mode and opacity.
+        /// </summary>
+        public static Bitmap CompositeLayers(PsdFile psdFile)
+        {
+            var result = new Bitmap(psdFile.Columns, psdFile.Rows, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(result))
+                g.Clear(Color.Transparent);
+
+            foreach (var layer in psdFile.Layers)
+            {
+                if (!layer.Visible) continue;
+                using (var layerBitmap = DecodeImage(layer))
+                {
+                    if (layerBitmap == null) continue;
+                    CompositeLayer(result, layerBitmap, layer);
+                }
+            }
+
+            return result;
+        }
+
+        private static void CompositeLayer(Bitmap dst, Bitmap src, Layer layer)
+        {
+            int ox = layer.Rect.X, oy = layer.Rect.Y;
+
+            for (int y = 0; y < layer.Rect.Height; y++)
+            {
+                int dy = oy + y;
+                if (dy < 0 || dy >= dst.Height) continue;
+
+                for (int x = 0; x < layer.Rect.Width; x++)
+                {
+                    int dx = ox + x;
+                    if (dx < 0 || dx >= dst.Width) continue;
+
+                    Color s = src.GetPixel(x, y);
+                    Color d = dst.GetPixel(dx, dy);
+                    dst.SetPixel(dx, dy, AlphaComposite(Blend(s, d, layer.BlendModeKey), s.A, layer.Opacity, d));
+                }
+            }
+        }
+
+        private static Color Blend(Color s, Color d, string mode)
+        {
+            switch (mode.TrimEnd())
+            {
+                case "mul":  return Rgb(s, s.R * d.R / 255, s.G * d.G / 255, s.B * d.B / 255);
+                case "scrn": return Rgb(s, 255 - (255 - s.R) * (255 - d.R) / 255, 255 - (255 - s.G) * (255 - d.G) / 255, 255 - (255 - s.B) * (255 - d.B) / 255);
+                case "over": return Rgb(s, Overlay(s.R, d.R), Overlay(s.G, d.G), Overlay(s.B, d.B));
+                case "hLit": return Rgb(s, Overlay(d.R, s.R), Overlay(d.G, s.G), Overlay(d.B, s.B));
+                case "sLit": return Rgb(s, SoftLight(s.R, d.R), SoftLight(s.G, d.G), SoftLight(s.B, d.B));
+                case "dark": return Rgb(s, Math.Min(s.R, d.R), Math.Min(s.G, d.G), Math.Min(s.B, d.B));
+                case "lite": return Rgb(s, Math.Max(s.R, d.R), Math.Max(s.G, d.G), Math.Max(s.B, d.B));
+                case "diff": return Rgb(s, Math.Abs(s.R - d.R), Math.Abs(s.G - d.G), Math.Abs(s.B - d.B));
+                case "smud": return Rgb(s, s.R + d.R - 2 * s.R * d.R / 255, s.G + d.G - 2 * s.G * d.G / 255, s.B + d.B - 2 * s.B * d.B / 255);
+                case "div":  return Rgb(s, ColorDodge(s.R, d.R), ColorDodge(s.G, d.G), ColorDodge(s.B, d.B));
+                case "idiv": return Rgb(s, ColorBurn(s.R, d.R), ColorBurn(s.G, d.G), ColorBurn(s.B, d.B));
+                default:     return s; // norm and unrecognised modes
+            }
+        }
+
+        private static Color Rgb(Color template, int r, int g, int b)
+            => Color.FromArgb(template.A, Clamp(r), Clamp(g), Clamp(b));
+
+        private static int Clamp(int v) => v < 0 ? 0 : v > 255 ? 255 : v;
+
+        // Overlay: condition on backdrop (d); Hard Light swaps s/d before calling this.
+        private static int Overlay(int s, int d)
+        {
+            double sv = s / 255.0, dv = d / 255.0;
+            return Clamp((int)((dv <= 0.5 ? 2.0 * sv * dv : 1.0 - 2.0 * (1.0 - sv) * (1.0 - dv)) * 255));
+        }
+
+        private static int SoftLight(int s, int d)
+        {
+            double sv = s / 255.0, dv = d / 255.0;
+            double r = sv < 0.5
+                ? dv - (1.0 - 2.0 * sv) * dv * (1.0 - dv)
+                : dv + (2.0 * sv - 1.0) * (dv <= 0.25 ? ((16.0 * dv - 12.0) * dv + 4.0) * dv : Math.Sqrt(dv) - dv);
+            return Clamp((int)(r * 255));
+        }
+
+        private static int ColorDodge(int s, int d)
+            => d == 255 ? 255 : Clamp(s * 255 / (255 - d));
+
+        private static int ColorBurn(int s, int d)
+            => d == 0 ? 0 : Clamp(255 - (255 - s) * 255 / d);
+
+        private static Color AlphaComposite(Color blended, int srcA, byte opacity, Color dst)
+        {
+            int effA = srcA * opacity / 255;
+            int dstA = dst.A;
+            int outA = effA + dstA * (255 - effA) / 255;
+            if (outA == 0) return Color.Transparent;
+            int dstWeight = dstA * (255 - effA) / 255;
+            return Color.FromArgb(
+                Clamp(outA),
+                Clamp((blended.R * effA + dst.R * dstWeight) / outA),
+                Clamp((blended.G * effA + dst.G * dstWeight) / outA),
+                Clamp((blended.B * effA + dst.B * dstWeight) / outA));
+        }
+
         public static Bitmap DecodeImage(Layer.Mask mask)
         {
             if (mask.Rect.Width == 0 || mask.Rect.Height == 0) return null;
