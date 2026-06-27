@@ -196,6 +196,13 @@ namespace bzPSD
             }
         }
 
+        /// <summary>
+        /// Per-channel display information (resource 1007), or null if not present.
+        /// Channels are in Photoshop panel order: composite, colour channels, then extra channels.
+        /// </summary>
+        public DisplayInfo DisplayInfo =>
+            (DisplayInfo)_imageResources.Find(x => x.ID == (int)ResourceIDs.DisplayInfo);
+
         public PsdFile Load(string filename)
         {
             using (FileStream stream = new FileStream(filename, FileMode.Open, FileAccess.Read))
@@ -384,6 +391,9 @@ namespace bzPSD
                         break;
                     case ResourceIDs.AlphaChannelNames:
                         imgRes = new AlphaChannels(imgRes);
+                        break;
+                    case ResourceIDs.DisplayInfo:
+                        imgRes = new DisplayInfo(imgRes);
                         break;
                 }
 
