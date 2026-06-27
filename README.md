@@ -130,7 +130,34 @@ Supported blend modes: Normal, Multiply, Screen, Overlay, Hard Light, Soft Light
 | `Channels` | Raw channel list. |
 | `SortedChannels` | Channels keyed by ID: 0=R, 1=G, 2=B, -1=transparency, -2=mask. |
 | `MaskData` | Layer mask (`Layer.Mask`). |
-| `AdjustmentInfo` | Additional layer data blocks. |
+| `AdjustmentInfo` | Additional layer data blocks (raw `AdjusmentLayerInfo` list). |
+| `IsTextLayer` | `true` when the layer has a TySh (Type Sheet) block. |
+| `TextData` | `TextLayer` accessor, or `null` if not a text layer. Cached per layer instance. |
+
+### Text layers
+
+```csharp
+var psd = new PsdFile().Load("template.psd");
+
+foreach (Layer layer in psd.Layers)
+{
+    if (!layer.IsTextLayer) continue;
+
+    Console.WriteLine($"{layer.Name}: "{layer.TextData.Text}"");
+
+    // Update the text; all formatting is preserved.
+    layer.TextData.Text = "Hello, world!";
+}
+
+psd.Save("output.psd");
+```
+
+### `TextLayer`
+
+| Member | Description |
+|--------|-------------|
+| `Text` | The text string. Getting reads the `Txt ` key from the descriptor; setting rewrites the TySh block in memory. |
+| `Transform` | Copy of the 6-element affine transform `[xx, xy, yx, yy, tx, ty]`. `tx`/`ty` give the canvas position. |
 
 ### Color modes
 

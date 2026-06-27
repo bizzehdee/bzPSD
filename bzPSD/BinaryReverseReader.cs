@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
 
+using System;
 using System.IO;
 using System.Text;
 
@@ -70,6 +71,13 @@ namespace bzPSD
         public override ulong ReadUInt64()
         {
             return Utilities.SwapBytes(base.ReadUInt64());
+        }
+
+        public override double ReadDouble()
+        {
+            byte[] bytes = ReadBytes(8);
+            Array.Reverse(bytes);
+            return BitConverter.ToDouble(bytes, 0);
         }
 
         public string ReadPascalString()

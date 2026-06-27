@@ -227,6 +227,30 @@ namespace System.Drawing.PSD
 
         public List<AdjusmentLayerInfo> AdjustmentInfo { get; }
 
+        /// <summary>True when this layer has a TySh (Type Sheet) block — i.e. it is a text layer.</summary>
+        public bool IsTextLayer => AdjustmentInfo.Exists(x => x.Key == "TySh");
+
+        private TextLayer _textLayer;
+
+        /// <summary>
+        /// Returns the <see cref="TextLayer"/> accessor for this layer, or null if it is not a text layer.
+        /// The instance is cached; modifications made via <see cref="TextLayer.Text"/> are reflected
+        /// immediately in the underlying TySh block and will be written by <see cref="Save"/>.
+        /// </summary>
+        public TextLayer TextData
+        {
+            get
+            {
+                if (_textLayer == null)
+                {
+                    var info = AdjustmentInfo.Find(x => x.Key == "TySh");
+                    if (info != null)
+                        _textLayer = new TextLayer(info);
+                }
+                return _textLayer;
+            }
+        }
+
         public void Save(BinaryReverseWriter reverseWriter)
         {
             Debug.WriteLine("Layer Save started at " + reverseWriter.BaseStream.Position.ToString(CultureInfo.InvariantCulture));

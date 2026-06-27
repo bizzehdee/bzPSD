@@ -26,6 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #endregion
+using System;
 using System.IO;
 
 namespace bzPSD
@@ -106,6 +107,15 @@ namespace bzPSD
         {
             val = Utilities.SwapBytes(val);
             base.Write(val);
+
+            if (AutoFlush) Flush();
+        }
+
+        public override void Write(double val)
+        {
+            byte[] bytes = BitConverter.GetBytes(val);
+            Array.Reverse(bytes);
+            base.Write(bytes);
 
             if (AutoFlush) Flush();
         }

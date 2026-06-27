@@ -72,7 +72,7 @@ namespace System.Drawing.PSD
 
             public string Key { get; }
 
-            public byte[] Data { get; }
+            public byte[] Data { get; set; }
 
             public void Save(BinaryReverseWriter writer)
             {
