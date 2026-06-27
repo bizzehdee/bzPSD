@@ -224,7 +224,8 @@ namespace System.Drawing.PSD
 
             internal void SavePixelData(BinaryReverseWriter writer)
             {
-                //writer.Write(m_data);
+                if (!Layer.SortedChannels.ContainsKey(-2)) return;
+                Layer.SortedChannels[-2].SavePixelData(writer);
             }
         }
     }

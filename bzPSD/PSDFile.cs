@@ -175,6 +175,110 @@ namespace bzPSD
             return Load(stream);
         }
 
+        public void Save(string filename)
+        {
+            using var stream = new FileStream(filename, FileMode.Create);
+            Save(stream);
+        }
+
+        public void Save(Stream stream)
+        {
+            var writer = new BinaryReverseWriter(stream);
+
+            // Header
+            writer.Write("8BPS".ToCharArray());
+            writer.Write(Version);
+            writer.Write(new byte[6]);
+            writer.Write(_channels);
+            writer.Write(_rows);
+            writer.Write(_columns);
+            writer.Write((short)_depth);
+            writer.Write((short)ColorMode);
+
+            // Color Mode Data
+            writer.Write((uint)ColorModeData.Length);
+            writer.Write(ColorModeData);
+
+            // Image Resources
+            using (new LengthWriter(writer))
+            {
+                foreach (var res in _imageResources)
+                    res.Save(writer);
+            }
+
+            // Layers and Mask
+            using (new LengthWriter(writer))
+            {
+                SaveLayers(writer);
+                SaveGlobalLayerMask(writer);
+            }
+
+            // Image Data
+            writer.Write((short)ImageCompression);
+
+            int bytesPerRow = _depth == 16 ? _columns * 2 : _columns;
+
+            if (ImageCompression == ImageCompression.Rle)
+            {
+                long countsOffset = stream.Position;
+                int countEntries = _channels * _rows;
+                var rowCounts = new int[countEntries];
+
+                for (int i = 0; i < countEntries; i++)
+                    writer.Write((short)0);
+
+                int idx = 0;
+                for (int ch = 0; ch < _channels; ch++)
+                    for (int row = 0; row < _rows; row++)
+                        rowCounts[idx++] = RleHelper.EncodedRow(stream, ImageData[ch], row * bytesPerRow, bytesPerRow);
+
+                long endOffset = stream.Position;
+                stream.Position = countsOffset;
+                for (int i = 0; i < countEntries; i++)
+                    writer.Write((short)rowCounts[i]);
+                stream.Position = endOffset;
+            }
+            else
+            {
+                for (int ch = 0; ch < _channels; ch++)
+                    writer.Write(ImageData[ch]);
+            }
+        }
+
+        private void SaveLayers(BinaryReverseWriter writer)
+        {
+            if (_layers.Count == 0)
+            {
+                writer.Write((uint)0);
+                return;
+            }
+
+            using (new LengthWriter(writer))
+            {
+                writer.Write(AbsoluteAlpha ? (short)-_layers.Count : (short)_layers.Count);
+
+                foreach (var layer in _layers)
+                    layer.Save(writer);
+
+                foreach (var layer in _layers)
+                {
+                    foreach (var ch in layer.Channels.Where(c => c.ID != -2))
+                        ch.SavePixelData(writer);
+                    layer.MaskData.SavePixelData(writer);
+                }
+
+                if (writer.BaseStream.Position % 2 == 1)
+                    writer.Write((byte)0);
+            }
+        }
+
+        private void SaveGlobalLayerMask(BinaryReverseWriter writer)
+        {
+            writer.Write((uint)_globalLayerMaskData.Length);
+            if (_globalLayerMaskData.Length > 0)
+                writer.Write(_globalLayerMaskData);
+        }
+
         public PsdFile Load(Stream stream)
         {
             //binary reverse reader reads data types in big-endian format.

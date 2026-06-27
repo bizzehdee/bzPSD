@@ -219,7 +219,7 @@ namespace System.Drawing.PSD
                 Debug.WriteLine("Channel SavePixelData started at " + writer.BaseStream.Position.ToString(CultureInfo.InvariantCulture));
 
                 writer.Write((short)ImageCompression);
-                writer.Write(ImageData);
+                writer.Write(Data);
             }
 
             public BinaryReverseReader DataReader
