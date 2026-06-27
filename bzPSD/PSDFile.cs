@@ -199,9 +199,23 @@ namespace bzPSD
         /// <summary>
         /// Per-channel display information (resource 1007), or null if not present.
         /// Channels are in Photoshop panel order: composite, colour channels, then extra channels.
+        /// For Multichannel files there is no composite entry, so index maps 1:1 to channel data.
         /// </summary>
         public DisplayInfo DisplayInfo =>
             (DisplayInfo)_imageResources.Find(x => x.ID == (int)ResourceIDs.DisplayInfo);
+
+        /// <summary>
+        /// ASCII names of extra (alpha / spot) channels (resource 1006), or null if not present.
+        /// </summary>
+        public AlphaChannels AlphaChannelNames =>
+            (AlphaChannels)_imageResources.Find(x => x.ID == (int)ResourceIDs.AlphaChannelNames);
+
+        /// <summary>
+        /// Unicode names of extra (alpha / spot) channels (resource 1045), or null if not present.
+        /// Prefer this over <see cref="AlphaChannelNames"/> when both are present.
+        /// </summary>
+        public UnicodeAlphaNames UnicodeAlphaNames =>
+            (UnicodeAlphaNames)_imageResources.Find(x => x.ID == (int)ResourceIDs.UnicodeAlphaNames);
 
         public PsdFile Load(string filename)
         {
@@ -394,6 +408,9 @@ namespace bzPSD
                         break;
                     case ResourceIDs.DisplayInfo:
                         imgRes = new DisplayInfo(imgRes);
+                        break;
+                    case ResourceIDs.UnicodeAlphaNames:
+                        imgRes = new UnicodeAlphaNames(imgRes);
                         break;
                 }
 
