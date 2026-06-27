@@ -72,7 +72,7 @@ namespace bzPSD
         public short Channels
         {
             get { return _channels; }
-            private set
+            set
             {
                 if (value < 1 || value > 24) throw new ArgumentException("Supported range is 1 to 24");
                 _channels = value;
@@ -85,22 +85,22 @@ namespace bzPSD
         public int Rows
         {
             get => _rows;
-            private set
+            set
             {
-                if (value < 0 || value > 30000) throw new ArgumentException("Supported range is 1 to 30000.");
+                if (value < 1 || value > 30000) throw new ArgumentException("Supported range is 1 to 30000.");
                 _rows = value;
             }
         }
 
         /// <summary>
-        /// The width of the image in pixels. 
+        /// The width of the image in pixels.
         /// </summary>
         public int Columns
         {
             get => _columns;
-            private set
+            set
             {
-                if (value < 0 || value > 30000)
+                if (value < 1 || value > 30000)
                     throw new ArgumentException("Supported range is 1 to 30000.");
                 _columns = value;
             }
@@ -112,31 +112,66 @@ namespace bzPSD
         public int Depth
         {
             get => _depth;
-            private set
+            set
             {
                 if (value == 1 || value == 8 || value == 16)
-                {
                     _depth = value;
-                }
                 else
-                {
                     throw new ArgumentException("Supported values are 1, 8, and 16.");
-                }
             }
         }
 
         /// <summary>
         /// The color mode of the file.
         /// </summary>
-        public ColorMode ColorMode { get; private set; }
+        public ColorMode ColorMode { get; set; }
 
         public IEnumerable<Layer> Layers => _layers;
 
-        public bool AbsoluteAlpha { get; private set; }
+        public bool AbsoluteAlpha { get; set; }
 
-        public byte[][] ImageData { get; private set; }
+        public byte[][] ImageData { get; set; }
 
-        public ImageCompression ImageCompression { get; private set; }
+        public ImageCompression ImageCompression { get; set; }
+
+        public void AddLayer(Layer layer) => _layers.Add(layer);
+
+        public void RemoveLayer(Layer layer) => _layers.Remove(layer);
+
+        /// <summary>
+        /// Creates a blank PsdFile with allocated (zero-filled) image data.
+        /// </summary>
+        public static PsdFile Create(int width, int height, ColorMode colorMode = ColorMode.RGB, int depth = 8)
+        {
+            if (width < 1 || width > 30000) throw new ArgumentOutOfRangeException(nameof(width));
+            if (height < 1 || height > 30000) throw new ArgumentOutOfRangeException(nameof(height));
+            if (depth != 1 && depth != 8 && depth != 16) throw new ArgumentException("depth must be 1, 8, or 16", nameof(depth));
+
+            int channelCount = colorMode switch
+            {
+                ColorMode.Grayscale => 1,
+                ColorMode.Duotone => 1,
+                ColorMode.CMYK => 4,
+                _ => 3
+            };
+
+            var psd = new PsdFile
+            {
+                Columns = width,
+                Rows = height,
+                ColorMode = colorMode,
+                Depth = depth,
+                Channels = (short)channelCount,
+                ImageCompression = ImageCompression.Raw,
+            };
+
+            int bytesPerChannel = width * height * (depth == 16 ? 2 : 1);
+            psd.ImageData = new byte[channelCount][];
+            for (int i = 0; i < channelCount; i++)
+                psd.ImageData[i] = new byte[bytesPerChannel];
+
+            return psd;
+        }
 
         private List<ImageResource> _imageResources;
 
